@@ -1,12 +1,10 @@
 services:
-  # ─── Backend ──────────────────────────────────────
   dolphin-bot:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: dolphin-bot
     restart: unless-stopped
-    env_file: .env
     environment:
       - APP_ENV=production
       - DATABASE_URL=sqlite:////app/data/dolphin.db
@@ -20,7 +18,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # ─── Frontend ─────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -32,17 +29,17 @@ services:
     networks:
       - dolphin-network
 
-  # ─── Nginx (Reverse Proxy) ────────────────────────
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
     container_name: dolphin-nginx
     restart: unless-stopped
-    # Port wird von Coolify über Domain-Einstellung verwaltet
-    # ports:
-    #   - "80:80"
-    env_file: .env
+    environment:
+      - BACKEND_URL=$SERVICE_URL_DOLPHIN_BOT
+      - FRONTEND_URL=$SERVICE_URL_FRONTEND
+      - BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
+      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS:-admin}
     depends_on:
       - dolphin-bot
       - frontend
