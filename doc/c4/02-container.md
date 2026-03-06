@@ -65,13 +65,14 @@ SHOW_LEGEND()
 
 ### Frontend (React App)
 - **Technologie**: React 18 + Vite
-- **Build**: Production-Build wird von Nginx serviert
+- **Build**: Production-Build (separater Container)
 - **Port**: 80 (via Nginx)
 - **Aufgaben**:
   - Dashboard UI
   - Settings Management
   - Echtzeit-Charts (Recharts)
   - WebSocket Client
+  - **Architektur**: Frontend ist eigenständiger Container, nicht im Backend gemountet
 
 ### Backend (FastAPI)
 - **Technologie**: Python 3.12 + FastAPI
@@ -81,6 +82,7 @@ SHOW_LEGEND()
   - WebSocket Server
   - Settings Management
   - Bot Lifecycle Management
+  - **Hinweis**: Backend serviert keine Static Files mehr (separates Frontend Container)
 
 ### Bot Engine
 - **Technologie**: Python
@@ -168,9 +170,35 @@ Bot Engine → Bitunix Client → Bitunix API
 ```yaml
 # Docker Compose Services
 - nginx: Port 80 (öffentlich)
+  - Reverse Proxy für API
+  - Static File Server für Frontend
 - frontend: Port 80 (intern)
+  - Eigener Container mit React Build
+  - Nginx serviert dist/ Verzeichnis
 - backend: Port 8000 (intern)
+  - Nur API Endpoints (keine Static Files)
+  - WebSocket Server
 - sqlite: Volume (persistiert)
 ```
+
+### Architektur-Änderung (März 2026)
+
+**Vorher**: Backend mountete Frontend als StaticFiles
+```python
+# ALT - main.py
+app.mount("/", StaticFiles(directory="../frontend", html=True))
+```
+
+**Nachher**: Frontend als separater Container
+```python
+# NEU - main.py
+# Backend serviert nur API, Frontend ist eigenständig
+```
+
+**Vorteile**:
+- Backend startet auch ohne Frontend-Build
+- Unabhängiges Frontend-Deployment
+- Bessere Separation of Concerns
+- Einfacheres Debugging
 
 Alle Container laufen in einem Docker-Netzwerk (`dolphin-network`).

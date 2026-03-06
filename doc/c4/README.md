@@ -121,5 +121,35 @@ Für Multi-User:
 
 ---
 
+## 🔄 Architektur-Updates
+
+### 2026-03-06 - Frontend/Backend Separation
+
+**Änderung**: Frontend ist jetzt separater Container, nicht mehr im Backend gemountet.
+
+**Vorher:**
+```python
+# backend/main.py
+app.mount("/", StaticFiles(directory="../frontend", html=True))
+```
+
+**Nachher:**
+```python
+# backend/main.py - Kein Static File Serving mehr
+# Frontend läuft als eigener Container
+```
+
+**Docker Compose:**
+- `frontend` - Eigener Container mit React Build
+- `nginx` - Proxy zu Frontend (Static Files) und Backend (API)
+- `backend` - Nur API Endpoints
+
+**Vorteile:**
+- Backend startet auch ohne Frontend-Build
+- Bessere Separation of Concerns
+- Einfacheres Debugging
+
+---
+
 *Dokumentation erstellt am: 2025-03-06*
-*Version: 1.0.0*
+*Version: 1.0.1*

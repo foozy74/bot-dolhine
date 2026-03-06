@@ -9,7 +9,7 @@ services:
     env_file: .env
     environment:
       - APP_ENV=production
-      - DATABASE_URL=sqlite:///./data/dolphin.db
+      - DATABASE_URL=sqlite:////app/data/dolphin.db
     volumes:
       - bot-data:/app/data
     networks:

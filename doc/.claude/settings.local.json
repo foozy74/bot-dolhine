@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/ -v --tb=short 2>&1 | head -80)",
+      "Bash(pip install pytest-asyncio aiosqlite httpx --quiet && cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_strategy.py -v --tb=short 2>&1 | head -50)",
+      "Bash(pip install pytest-asyncio aiosqlite httpx pytest-cov -q 2>&1 | tail -3)",
+      "Bash(python -m pytest /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot/tests/ -v --tb=short 2>&1)",
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_strategy.py -v 2>&1 | head -50)",
+      "Bash(pip install -r /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot/backend/requirements.txt -q 2>&1 | tail -3)",
+      "Bash(pip install fastapi uvicorn sqlalchemy aiosqlite pandas numpy requests pydantic websockets -q 2>&1 | tail -3)",
+      "Bash(pip install pydantic-settings python-dotenv python-multipart -q 2>&1)",
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_strategy.py -v --cov=backend.bot.strategy 2>&1 | tail -20)",
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_integration.py -v --tb=short 2>&1 | head -40)",
+      "Bash(python -m pytest tests/test_integration.py -v 2>&1)",
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_integration.py -v 2>&1 | head -40)",
+      "Bash(cd /Users/jurgen/dev/thesolution/github/Delfin_bot/dolphin-bot && python -m pytest tests/test_integration.py -v 2>&1 | head -50)"
+    ]
+  }
+}

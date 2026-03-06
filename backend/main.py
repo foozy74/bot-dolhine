@@ -35,10 +35,8 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 
-# Frontend - React build (wenn vorhanden, sonst statische Dateien)
+# Frontend - React build (nur wenn vorhanden)
 frontend_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
 if os.path.exists(frontend_path):
     app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
-else:
-    # Fallback: statisches Frontend
-    app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+# Note: In Docker, nginx serves the frontend separately
