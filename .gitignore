@@ -28,6 +28,20 @@ data/*.sqlite
 data/*.json
 !data/.gitkeep
 
+# ─── Node.js ───────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/dist/
+
+# ─── Node.js ───────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/dist/
+
 # ─── IDE ───────────────────────────────────────────
 .vscode/
 .idea/

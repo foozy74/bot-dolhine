@@ -3,22 +3,38 @@ services:
   # ─── Backend ──────────────────────────────────────
   dolphin-bot:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: dolphin-bot
     restart: unless-stopped
     env_file: .env
     environment:
       - APP_ENV=production
+      - DATABASE_URL=sqlite:///./data/dolphin.db
     volumes:
       - bot-data:/app/data
     networks:
       - dolphin-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ─── Frontend ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dolphin-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - dolphin-bot
+    networks:
+      - dolphin-network
+
   # ─── Nginx ────────────────────────────────────────
   nginx:
     image: nginx:alpine
@@ -32,11 +48,14 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - dolphin-bot
+      - frontend
     networks:
       - dolphin-network
+
 volumes:
   bot-data:
     driver: local
+
 networks:
   dolphin-network:
     driver: bridge
