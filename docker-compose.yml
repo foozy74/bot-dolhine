@@ -1,6 +1,3 @@
-# Multi-Service Docker Compose Deployment
-# Coolify erkennt Docker Compose anhand dieser Datei
-
 version: "3.8"
 
 services:
@@ -9,12 +6,16 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: dolphin-bot
     restart: unless-stopped
+    env_file: .env
     environment:
       - APP_ENV=production
       - DATABASE_URL=sqlite:///./data/dolphin.db
     volumes:
       - bot-data:/app/data
+    networks:
+      - dolphin-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -26,23 +27,25 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: dolphin-frontend
     restart: unless-stopped
     depends_on:
       - dolphin-bot
+    networks:
+      - dolphin-network
 
   # ─── Nginx (Reverse Proxy) ────────────────────────
   nginx:
     image: nginx:alpine
+    container_name: dolphin-nginx
     restart: unless-stopped
     ports:
       - "80:80"
-    environment:
-      - BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
-      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS:-admin}
+    env_file: .env
     command: >
       sh -c "
         apk add --no-cache apache2-utils &&
-        htpasswd -b -c /etc/nginx/.htpasswd $${BASIC_AUTH_USER} $${BASIC_AUTH_PASS} &&
+        htpasswd -b -c /etc/nginx/.htpasswd $${BASIC_AUTH_USER:-admin} $${BASIC_AUTH_PASS:-admin} &&
         nginx -g 'daemon off;'
       "
     volumes:
@@ -50,7 +53,13 @@ services:
     depends_on:
       - dolphin-bot
       - frontend
+    networks:
+      - dolphin-network
 
 volumes:
   bot-data:
     driver: local
+
+networks:
+  dolphin-network:
+    driver: bridge
