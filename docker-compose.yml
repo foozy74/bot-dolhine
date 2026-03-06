@@ -39,8 +39,9 @@ services:
       dockerfile: Dockerfile
     container_name: dolphin-nginx
     restart: unless-stopped
-    ports:
-      - "80:80"
+    # Port wird von Coolify über Domain-Einstellung verwaltet
+    # ports:
+    #   - "80:80"
     env_file: .env
     depends_on:
       - dolphin-bot
