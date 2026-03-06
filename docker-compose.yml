@@ -1,62 +1,23 @@
 services:
   dolphin-bot:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: dolphin-bot
     restart: unless-stopped
     environment:
       - APP_ENV=production
       - DATABASE_URL=sqlite:////app/data/dolphin.db
-      # Coolify erkennt den Service automatisch
     volumes:
       - bot-data:/app/data
-    networks:
-      - dolphin-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: dolphin-frontend
-    restart: unless-stopped
-    depends_on:
-      - dolphin-bot
-    networks:
-      - dolphin-network
-
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: dolphin-nginx
-    restart: unless-stopped
-    environment:
-      - BASIC_AUTH_USER=${BASIC_AUTH_USER}
-      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS}
-    depends_on:
-      - dolphin-bot
-      - frontend
-    networks:
-      - dolphin-network
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     labels:
       - "coolify.service=mainservice"
 
 volumes:
   bot-data:
     driver: local
-
-networks:
-  dolphin-network:
-    driver: bridge
