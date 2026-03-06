@@ -1,0 +1,26 @@
+# Coolify Configuration
+# Diese Datei hilft Coolify beim korrekten Deployment
+
+# Docker Compose Konfiguration
+docker_compose_path: docker-compose.yml
+
+# Services die Coolify verwalten soll
+services:
+  - nginx
+
+# Ports die exponiert werden sollen (wird von Coolify automatisch gemappt)
+ports:
+  - "80:80"
+
+# Persistente Volumes
+volumes:
+  - bot-data:/app/data
+
+# Umgebungsvariablen die gesetzt werden müssen
+environment:
+  - BASIC_AUTH_USER
+  - BASIC_AUTH_PASS
+  - BITUNIX_API_KEY
+  - BITUNIX_SECRET_KEY
+  - TELEGRAM_BOT_TOKEN
+  - TELEGRAM_CHAT_ID
