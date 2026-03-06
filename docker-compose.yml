@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+# ─── Backend ──────────────────────────────────────
+  dolphin-bot:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: dolphin-bot
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - APP_ENV=production
+    volumes:
+      - bot-data:/app/data
+    networks:
+      - dolphin-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+# ─── Nginx ────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: dolphin-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - dolphin-bot
+    networks:
+      - dolphin-network
+volumes:
+  bot-data:
+    driver: local
+networks:
+  dolphin-network:
+    driver: bridge

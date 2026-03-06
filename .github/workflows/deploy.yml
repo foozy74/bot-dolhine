@@ -1,0 +1,14 @@
+name: 🐬 Deploy to Coolify
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify Webhook
+        run: |
+          curl -fsSL -X POST             -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_TOKEN }}"             "${{ secrets.COOLIFY_WEBHOOK_URL }}"
+  - name: Deploy Status
+    run: echo "✅ Deployment ausgelöst!"
