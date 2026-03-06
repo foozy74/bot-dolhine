@@ -36,13 +36,9 @@ services:
       dockerfile: Dockerfile
     container_name: dolphin-nginx
     restart: unless-stopped
-    # Port wird von Coolify automatisch zugewiesen
-    # Kein ports: mapping nötig!
     environment:
-      - BACKEND_URL=$SERVICE_URL_DOLPHIN_BOT
-      - FRONTEND_URL=$SERVICE_URL_FRONTEND
-      - BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
-      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS:-admin}
+      - BASIC_AUTH_USER=${BASIC_AUTH_USER}
+      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS}
     depends_on:
       - dolphin-bot
       - frontend
