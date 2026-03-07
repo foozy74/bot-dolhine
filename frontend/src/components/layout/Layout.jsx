@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, Settings, FileText, Menu, X } from 'lucide-react';
+import { Activity, Settings, FileText, Menu, X, HelpCircle } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -20,6 +20,7 @@ const Layout = ({ children }) => {
     { path: '/', label: 'Dashboard', icon: Activity },
     { path: '/settings', label: 'Einstellungen', icon: Settings },
     { path: '/logs', label: 'Logs', icon: FileText },
+    { path: '/help', label: 'Hilfe', icon: HelpCircle },
   ];
 
   return (

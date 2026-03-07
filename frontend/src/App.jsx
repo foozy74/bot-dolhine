@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
+import Help from './pages/Help';
 import { WebSocketProvider } from './hooks/useWebSocket';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<Logs />} />
+          <Route path="/help" element={<Help />} />
         </Routes>
       </Layout>
     </WebSocketProvider>
