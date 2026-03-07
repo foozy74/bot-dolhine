@@ -35,7 +35,5 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 
-# Frontend - React build (nur wenn vorhanden)
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend/dist")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+# Note: Frontend wird von nginx geserved, nicht vom Backend
+# Backend dient nur API-Endpunkte unter /api/
