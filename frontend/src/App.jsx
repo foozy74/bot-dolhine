@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
 import Help from './pages/Help';
+import Backtest from './pages/Backtest';
 import { WebSocketProvider } from './hooks/useWebSocket';
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<Logs />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/backtest" element={<Backtest />} />
         </Routes>
       </Layout>
     </WebSocketProvider>

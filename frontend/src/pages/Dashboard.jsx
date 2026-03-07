@@ -10,7 +10,9 @@ import {
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  Scatter,
+  ComposedChart
 } from 'recharts';
 import { 
   Play, 
@@ -78,11 +80,21 @@ const Dashboard = () => {
   useEffect(() => {
     if (status?.current_price) {
       setPriceHistory((prev) => {
+        const timestamp = new Date();
         const newPoint = {
-          time: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          time: timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           price: status.current_price,
           pnl: status.pnl || 0,
+          entry_price: status.entry_price || null,
+          position: status.position || null,
+          timestamp: timestamp.getTime(),
         };
+        
+        const lastPoint = prev[prev.length - 1];
+        if (lastPoint && lastPoint.timestamp === newPoint.timestamp) {
+          return [...prev.slice(0, -1), newPoint];
+        }
+        
         const newHistory = [...prev, newPoint].slice(-50);
         return newHistory;
       });
@@ -287,7 +299,7 @@ const Dashboard = () => {
           <h3 style={{ marginBottom: '1rem' }}>📈 Preisverlauf</h3>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={priceHistory}>
+              <ComposedChart data={priceHistory}>
                 <defs>
                   <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/>
@@ -313,6 +325,11 @@ const Dashboard = () => {
                     borderRadius: 'var(--radius-md)'
                   }}
                   labelStyle={{ color: 'var(--text-primary)' }}
+                  formatter={(value, name) => {
+                    if (name === 'price') return [`$${value.toFixed(2)}`, 'Preis'];
+                    if (name === 'entry') return [`$${value.toFixed(2)}`, 'Entry'];
+                    return [value, name];
+                  }}
                 />
                 <Area 
                   type="monotone" 
@@ -322,8 +339,26 @@ const Dashboard = () => {
                   fill="url(#priceGradient)" 
                   strokeWidth={2}
                 />
-              </AreaChart>
+                <Scatter
+                  data={priceHistory.filter(point => point.position && point.entry_price)}
+                  dataKey="entry_price"
+                  fill={priceHistory.length > 0 && priceHistory[priceHistory.length - 1]?.position === 'LONG' ? '#22c55e' : '#ef4444'}
+                  shape="circle"
+                  r={6}
+                  name="Entry"
+                />
+              </ComposedChart>
             </ResponsiveContainer>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }} />
+              <span className="text-secondary">Long Entry</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
+              <span className="text-secondary">Short Entry</span>
+            </div>
           </div>
         </div>
 

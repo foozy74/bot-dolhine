@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐬 Delfin Bot Backtest Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .metric-label {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .metric-value.positive {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .metric-value.negative {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .chart-container {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .chart-container h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .trades-table {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-long {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-short {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .badge-tp {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-sl {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐬 Delfin Bot Backtest Report</h1>
+            <p style="color: #666; margin-top: 0.5rem;">
+                BTCUSDT | 5m | 7 Tage | 
+                Startkapital: $10,000.00
+            </p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Return</div>
+                <div class="metric-value positive">
+                    15.31%
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Max Drawdown</div>
+                <div class="metric-value negative">-6.61%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value">42.70%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Profit Factor</div>
+                <div class="metric-value">1.02</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Sharpe Ratio</div>
+                <div class="metric-value">5.91</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value">89</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Final Capital</div>
+                <div class="metric-value positive">
+                    $10,170.97
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Fees</div>
+                <div class="metric-value">$416.89</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2>📈 Equity Curve</h2>
+            <canvas id="equityChart" height="80"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>📉 Drawdown</h2>
+            <canvas id="drawdownChart" height="80"></canvas>
+        </div>
+
+        <div class="trades-table">
+            <h2>📊 Letzte Trades</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>Direction</th>
+                        <th>PnL</th>
+                        <th>PnL %</th>
+                        <th>Exit Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>2026-03-06 12:01</td>
+                        <td>2026-03-06 12:51</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="positive">$434.25</td>
+                        <td class="positive">6.17%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-06 23:26</td>
+                        <td>2026-03-06 23:31</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-180.11</td>
+                        <td class="negative">-3.01%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-06 23:31</td>
+                        <td>2026-03-06 23:36</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-61.42</td>
+                        <td class="negative">-1.07%</td>
+                        <td><span class="badge badge-sl">SIGNAL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-06 23:36</td>
+                        <td>2026-03-06 23:41</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-189.84</td>
+                        <td class="negative">-3.30%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-06 23:41</td>
+                        <td>2026-03-06 23:56</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="positive">$494.44</td>
+                        <td class="positive">8.28%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 01:36</td>
+                        <td>2026-03-07 01:41</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="positive">$34.66</td>
+                        <td class="positive">0.45%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 07:56</td>
+                        <td>2026-03-07 09:16</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-150.73</td>
+                        <td class="negative">-2.22%</td>
+                        <td><span class="badge badge-sl">SIGNAL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 09:16</td>
+                        <td>2026-03-07 09:21</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-135.20</td>
+                        <td class="negative">-2.07%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 09:26</td>
+                        <td>2026-03-07 09:51</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-251.96</td>
+                        <td class="negative">-4.10%</td>
+                        <td><span class="badge badge-sl">SL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 10:21</td>
+                        <td>2026-03-07 10:26</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="positive">$124.97</td>
+                        <td class="positive">1.95%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 11:36</td>
+                        <td>2026-03-07 12:16</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-337.68</td>
+                        <td class="negative">-3.71%</td>
+                        <td><span class="badge badge-sl">SL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 12:21</td>
+                        <td>2026-03-07 12:26</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-203.23</td>
+                        <td class="negative">-2.99%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 12:31</td>
+                        <td>2026-03-07 12:56</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-257.42</td>
+                        <td class="negative">-4.18%</td>
+                        <td><span class="badge badge-sl">SL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 13:11</td>
+                        <td>2026-03-07 13:16</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="positive">$163.74</td>
+                        <td class="positive">3.04%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 14:46</td>
+                        <td>2026-03-07 16:16</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="negative">$-183.87</td>
+                        <td class="negative">-3.29%</td>
+                        <td><span class="badge badge-sl">SIGNAL</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 16:16</td>
+                        <td>2026-03-07 16:21</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-316.50</td>
+                        <td class="negative">-6.33%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 16:21</td>
+                        <td>2026-03-07 17:21</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="positive">$363.15</td>
+                        <td class="positive">7.96%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 18:36</td>
+                        <td>2026-03-07 18:41</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="negative">$-103.75</td>
+                        <td class="negative">-1.97%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 18:41</td>
+                        <td>2026-03-07 19:16</td>
+                        <td><span class="badge badge-long">LONG</span></td>
+                        <td class="positive">$463.32</td>
+                        <td class="positive">7.66%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2026-03-07 20:21</td>
+                        <td>2026-03-07 20:26</td>
+                        <td><span class="badge badge-short">SHORT</span></td>
+                        <td class="positive">$70.32</td>
+                        <td class="positive">0.91%</td>
+                        <td><span class="badge badge-tp">TP</span></td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Equity Curve Chart
+        const equityCtx = document.getElementById('equityChart').getContext('2d');
+        new Chart(equityCtx, {
+            type: 'line',
+            data: {
+                labels: [Timestamp('2026-03-07 12:56:32.837363'), Timestamp('2026-03-07 13:01:32.837371'), Timestamp('2026-03-07 13:06:32.837379'), Timestamp('2026-03-07 13:11:32.837386'), Timestamp('2026-03-07 13:16:32.837394'), Timestamp('2026-03-07 13:21:32.837401'), Timestamp('2026-03-07 13:26:32.837409'), Timestamp('2026-03-07 13:31:32.837417'), Timestamp('2026-03-07 13:36:32.837425'), Timestamp('2026-03-07 13:41:32.837432'), Timestamp('2026-03-07 13:46:32.837440'), Timestamp('2026-03-07 13:51:32.837448'), Timestamp('2026-03-07 13:56:32.837455'), Timestamp('2026-03-07 14:01:32.837463'), Timestamp('2026-03-07 14:06:32.837471'), Timestamp('2026-03-07 14:11:32.837478'), Timestamp('2026-03-07 14:16:32.837486'), Timestamp('2026-03-07 14:21:32.837494'), Timestamp('2026-03-07 14:26:32.837502'), Timestamp('2026-03-07 14:31:32.837509'), Timestamp('2026-03-07 14:36:32.837517'), Timestamp('2026-03-07 14:41:32.837525'), Timestamp('2026-03-07 14:46:32.837532'), Timestamp('2026-03-07 14:51:32.837540'), Timestamp('2026-03-07 14:56:32.837548'), Timestamp('2026-03-07 15:01:32.837555'), Timestamp('2026-03-07 15:06:32.837563'), Timestamp('2026-03-07 15:11:32.837571'), Timestamp('2026-03-07 15:16:32.837578'), Timestamp('2026-03-07 15:21:32.837586'), Timestamp('2026-03-07 15:26:32.837594'), Timestamp('2026-03-07 15:31:32.837601'), Timestamp('2026-03-07 15:36:32.837609'), Timestamp('2026-03-07 15:41:32.837617'), Timestamp('2026-03-07 15:46:32.837625'), Timestamp('2026-03-07 15:51:32.837633'), Timestamp('2026-03-07 15:56:32.837641'), Timestamp('2026-03-07 16:01:32.837648'), Timestamp('2026-03-07 16:06:32.837656'), Timestamp('2026-03-07 16:11:32.837664'), Timestamp('2026-03-07 16:16:32.837671'), Timestamp('2026-03-07 16:21:32.837679'), Timestamp('2026-03-07 16:26:32.837687'), Timestamp('2026-03-07 16:31:32.837697'), Timestamp('2026-03-07 16:36:32.837705'), Timestamp('2026-03-07 16:41:32.837712'), Timestamp('2026-03-07 16:46:32.837720'), Timestamp('2026-03-07 16:51:32.837728'), Timestamp('2026-03-07 16:56:32.837736'), Timestamp('2026-03-07 17:01:32.837744'), Timestamp('2026-03-07 17:06:32.837751'), Timestamp('2026-03-07 17:11:32.837759'), Timestamp('2026-03-07 17:16:32.837767'), Timestamp('2026-03-07 17:21:32.837775'), Timestamp('2026-03-07 17:26:32.837783'), Timestamp('2026-03-07 17:31:32.837791'), Timestamp('2026-03-07 17:36:32.837799'), Timestamp('2026-03-07 17:41:32.837807'), Timestamp('2026-03-07 17:46:32.837814'), Timestamp('2026-03-07 17:51:32.837822'), Timestamp('2026-03-07 17:56:32.837830'), Timestamp('2026-03-07 18:01:32.837837'), Timestamp('2026-03-07 18:06:32.837845'), Timestamp('2026-03-07 18:11:32.837853'), Timestamp('2026-03-07 18:16:32.837861'), Timestamp('2026-03-07 18:21:32.837868'), Timestamp('2026-03-07 18:26:32.837876'), Timestamp('2026-03-07 18:31:32.837884'), Timestamp('2026-03-07 18:36:32.837892'), Timestamp('2026-03-07 18:41:32.837900'), Timestamp('2026-03-07 18:46:32.837908'), Timestamp('2026-03-07 18:51:32.837915'), Timestamp('2026-03-07 18:56:32.837923'), Timestamp('2026-03-07 19:01:32.837931'), Timestamp('2026-03-07 19:06:32.837939'), Timestamp('2026-03-07 19:11:32.837949'), Timestamp('2026-03-07 19:16:32.837957'), Timestamp('2026-03-07 19:21:32.837965'), Timestamp('2026-03-07 19:26:32.837973'), Timestamp('2026-03-07 19:31:32.837980'), Timestamp('2026-03-07 19:36:32.837988'), Timestamp('2026-03-07 19:41:32.837996'), Timestamp('2026-03-07 19:46:32.838003'), Timestamp('2026-03-07 19:51:32.838011'), Timestamp('2026-03-07 19:56:32.838019'), Timestamp('2026-03-07 20:01:32.838026'), Timestamp('2026-03-07 20:06:32.838034'), Timestamp('2026-03-07 20:11:32.838042'), Timestamp('2026-03-07 20:16:32.838049'), Timestamp('2026-03-07 20:21:32.838057'), Timestamp('2026-03-07 20:26:32.838065'), Timestamp('2026-03-07 20:31:32.838073'), Timestamp('2026-03-07 20:36:32.838080'), Timestamp('2026-03-07 20:41:32.838088'), Timestamp('2026-03-07 20:46:32.838096'), Timestamp('2026-03-07 20:51:32.838103'), Timestamp('2026-03-07 20:56:32.838113'), Timestamp('2026-03-07 21:01:32.838121'), Timestamp('2026-03-07 21:06:32.838129'), Timestamp('2026-03-07 21:11:32.838137')],
+                datasets: [{
+                    label: 'Equity ($)',
+                    data: [9714.554156305298, 9714.554156305298, 9714.554156305298, 9714.016229601204, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9878.298018609748, 9877.739165941313, 9936.470614947637, 9952.503851996044, 9889.254092531903, 9977.94681157374, 9889.706099164358, 9981.775148474107, 9952.389259344372, 9927.022295790723, 9957.262094457134, 10155.646657456402, 10091.841085030595, 9846.043963478063, 10009.93724987498, 9940.91126238841, 9872.988563355113, 9753.090684335217, 9920.019849725799, 9693.926126854709, 9377.467612609771, 9507.781744412387, 9494.013040983624, 9510.482858534906, 9564.078992430008, 9559.74783745802, 9609.205088735707, 9680.985764824438, 9716.913362266778, 9688.747200183934, 9661.496556715943, 9662.646131849811, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9741.078659775778, 9740.552923011986, 9636.721269543961, 9733.21082977653, 9764.775571303127, 9716.237804881992, 9725.053541474887, 9832.3482197627, 9991.04346838688, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10100.648778185438, 10099.871784715302, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642, 10170.965053360642],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        // Drawdown Chart
+        const drawdownCtx = document.getElementById('drawdownChart').getContext('2d');
+        const cumulative = [0.9584636772860577, 0.9633198580035165, 1.050747807380092, 1.1398596995243617, 1.234757385480563, 1.1531094539775733];
+        const runningMax = cumulative.map((v, i) => Math.max(...cumulative.slice(0, i+1)));
+        const drawdown = cumulative.map((v, i) => (v - runningMax[i]) / runningMax[i] * 100);
+        
+        new Chart(drawdownCtx, {
+            type: 'line',
+            data: {
+                labels: [datetime.date(2026, 3, 2), datetime.date(2026, 3, 3), datetime.date(2026, 3, 4), datetime.date(2026, 3, 5), datetime.date(2026, 3, 6), datetime.date(2026, 3, 7)],
+                datasets: [{
+                    label: 'Drawdown (%)',
+                    data: drawdown.slice(-100),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

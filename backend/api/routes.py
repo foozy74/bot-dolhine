@@ -77,3 +77,201 @@ async def broadcast(data: dict):
             dead.append(c)
     for c in dead:
         clients.remove(c)
+
+
+# ─── Backtest Endpoints ───────────────────────────────────────
+class BacktestConfig(BaseModel):
+    symbol: str = "BTCUSDT"
+    timeframe: str = "5m"
+    days: int = 30
+    initial_capital: float = 10000.0
+    risk_per_trade: float = 0.02
+    leverage: float = 1.0
+
+
+@router.post("/backtest/run")
+async def run_backtest(config: BacktestConfig):
+    """Führt einen Backtest mit echten API-Daten durch"""
+    try:
+        # API Keys aus Settings laden
+        async for session in get_session():
+            settings_service = SettingsService(session)
+            api_key_setting = await settings_service.get_setting('bitunix_api_key', include_secrets=True)
+            secret_key_setting = await settings_service.get_setting('bitunix_secret_key', include_secrets=True)
+            
+            if not api_key_setting or not api_key_setting.get('value'):
+                raise HTTPException(400, "API Key nicht konfiguriert!")
+            if not secret_key_setting or not secret_key_setting.get('value'):
+                raise HTTPException(400, "Secret Key nicht konfiguriert!")
+            
+            api_key = api_key_setting['value']
+            secret_key = secret_key_setting['value']
+        
+        # Backtest ausführen
+        from bot.backtest import AdvancedBacktester, BacktestConfig as BTConfig, generate_html_report
+        
+        bt_config = BTConfig(
+            symbol=config.symbol,
+            timeframe=config.timeframe,
+            days=config.days,
+            initial_capital=config.initial_capital,
+            risk_per_trade=config.risk_per_trade,
+            leverage=config.leverage
+        )
+        
+        backtester = AdvancedBacktester(bt_config, api_key, secret_key)
+        result = backtester.run_backtest()
+        backtester.result = result
+        
+        # Ergebnisse extrahieren
+        trades_summary = [
+            {
+                'entry_time': str(t.entry_time),
+                'exit_time': str(t.exit_time) if t.exit_time else None,
+                'direction': t.direction,
+                'entry_price': t.entry_price,
+                'exit_price': t.exit_price,
+                'pnl': t.pnl,
+                'pnl_percent': t.pnl_percent,
+                'fees': t.fees,
+                'exit_reason': t.exit_reason
+            }
+            for t in result.trades[-50:]  # Letzte 50 Trades
+        ]
+        
+        # Equity Curve für Chart (alle 10 Datenpunkte für Performance)
+        equity_data = result.equity_curve.iloc[::max(1, len(result.equity_curve)//100)].to_dict('records')
+        
+        return {
+            'success': True,
+            'metrics': result.metrics,
+            'trades': trades_summary,
+            'equity_curve': equity_data,
+            'config': {
+                'symbol': config.symbol,
+                'timeframe': config.timeframe,
+                'days': config.days,
+                'initial_capital': config.initial_capital,
+                'risk_per_trade': config.risk_per_trade
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Backtest Error: {str(e)}")
+        raise HTTPException(500, f"Backtest fehlgeschlagen: {str(e)}")
+
+
+@router.get("/backtest/config")
+async def get_backtest_config():
+    """Gibt Standard-Backtest-Konfiguration zurück"""
+    return {
+        'symbol': 'BTCUSDT',
+        'timeframe': '5m',
+        'days_options': [7, 30, 90],
+        'initial_capital': 10000.0,
+        'risk_per_trade': 0.02,
+        'leverage': 1.0,
+        'fee_rate': 0.0004,
+        'slippage_rate': 0.0001
+    }
+
+
+# ─── Backtest Endpoints ───────────────────────────────────────
+class BacktestConfig(BaseModel):
+    symbol: str = "BTCUSDT"
+    timeframe: str = "5m"
+    days: int = 30
+    initial_capital: float = 10000.0
+    risk_per_trade: float = 0.02
+    leverage: float = 1.0
+
+
+@router.post("/backtest/run")
+async def run_backtest(config: BacktestConfig):
+    """Führt einen Backtest mit echten API-Daten durch"""
+    try:
+        # API Keys aus Settings laden
+        async for session in get_session():
+            settings_service = SettingsService(session)
+            api_key_setting = await settings_service.get_setting('bitunix_api_key', include_secrets=True)
+            secret_key_setting = await settings_service.get_setting('bitunix_secret_key', include_secrets=True)
+            
+            if not api_key_setting or not api_key_setting.get('value'):
+                raise HTTPException(400, "API Key nicht konfiguriert!")
+            if not secret_key_setting or not secret_key_setting.get('value'):
+                raise HTTPException(400, "Secret Key nicht konfiguriert!")
+            
+            api_key = api_key_setting['value']
+            secret_key = secret_key_setting['value']
+        
+        # Backtest ausführen
+        from bot.backtest import AdvancedBacktester, BacktestConfig as BTConfig, generate_html_report
+        
+        bt_config = BTConfig(
+            symbol=config.symbol,
+            timeframe=config.timeframe,
+            days=config.days,
+            initial_capital=config.initial_capital,
+            risk_per_trade=config.risk_per_trade,
+            leverage=config.leverage
+        )
+        
+        backtester = AdvancedBacktester(bt_config, api_key, secret_key)
+        result = backtester.run_backtest()
+        backtester.result = result
+        
+        # Ergebnisse extrahieren
+        trades_summary = [
+            {
+                'entry_time': str(t.entry_time),
+                'exit_time': str(t.exit_time) if t.exit_time else None,
+                'direction': t.direction,
+                'entry_price': t.entry_price,
+                'exit_price': t.exit_price,
+                'pnl': t.pnl,
+                'pnl_percent': t.pnl_percent,
+                'fees': t.fees,
+                'exit_reason': t.exit_reason
+            }
+            for t in result.trades[-50:]  # Letzte 50 Trades
+        ]
+        
+        # Equity Curve für Chart (alle 10 Datenpunkte für Performance)
+        equity_data = result.equity_curve.iloc[::max(1, len(result.equity_curve)//100)].to_dict('records')
+        
+        return {
+            'success': True,
+            'metrics': result.metrics,
+            'trades': trades_summary,
+            'equity_curve': equity_data,
+            'config': {
+                'symbol': config.symbol,
+                'timeframe': config.timeframe,
+                'days': config.days,
+                'initial_capital': config.initial_capital,
+                'risk_per_trade': config.risk_per_trade
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Backtest Error: {str(e)}")
+        raise HTTPException(500, f"Backtest fehlgeschlagen: {str(e)}")
+
+
+@router.get("/backtest/config")
+async def get_backtest_config():
+    """Gibt Standard-Backtest-Konfiguration zurück"""
+    return {
+        'symbol': 'BTCUSDT',
+        'timeframe': '5m',
+        'days_options': [7, 30, 90],
+        'initial_capital': 10000.0,
+        'risk_per_trade': 0.02,
+        'leverage': 1.0,
+        'fee_rate': 0.0004,
+        'slippage_rate': 0.0001
+    }
