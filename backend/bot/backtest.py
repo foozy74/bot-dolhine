@@ -369,8 +369,44 @@ class AdvancedBacktester:
     
     def _calculate_metrics(self, daily_returns: pd.Series) -> Dict:
         """Berechnet umfassende Performance-Metriken"""
+        # Basis-Metriken auch ohne daily_returns berechnen
+        winning_trades = [t for t in self.trades if t.pnl > 0]
+        losing_trades = [t for t in self.trades if t.pnl <= 0]
+        win_rate = (len(winning_trades) / len(self.trades) * 100) if self.trades else 0
+        gross_profit = sum(t.pnl for t in winning_trades)
+        gross_loss = abs(sum(t.pnl for t in losing_trades))
+        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+        avg_win = np.mean([t.pnl for t in winning_trades]) if winning_trades else 0
+        avg_loss = np.mean([t.pnl for t in losing_trades]) if losing_trades else 0
+        avg_win_loss_ratio = abs(avg_win / avg_loss) if avg_loss != 0 else float('inf')
+        total_trades = len(self.trades)
+        avg_trade_duration = np.mean([t.duration_minutes for t in self.trades]) if self.trades else 0
+        total_fees = sum(t.fees for t in self.trades)
+        total_slippage = sum(t.slippage * t.size for t in self.trades)
+        
+        # Wenn keine daily_returns, dann Standardwerte zurückgeben
         if len(daily_returns) == 0:
-            return {}
+            return {
+                'total_return': 0,
+                'total_return_pct': '0.00%',
+                'win_rate': win_rate,
+                'win_rate_pct': f"{win_rate:.2f}%",
+                'profit_factor': profit_factor,
+                'max_drawdown': 0,
+                'max_drawdown_pct': '0.00%',
+                'sharpe_ratio': 0,
+                'total_trades': total_trades,
+                'winning_trades': len(winning_trades),
+                'losing_trades': len(losing_trades),
+                'avg_win': avg_win,
+                'avg_loss': avg_loss,
+                'avg_win_loss_ratio': avg_win_loss_ratio,
+                'avg_trade_duration_min': avg_trade_duration,
+                'total_fees': total_fees,
+                'total_slippage': total_slippage,
+                'final_capital': self.capital,
+                'initial_capital': self.config.initial_capital
+            }
         
         # Basis-Metriken
         total_return = ((1 + daily_returns).prod() - 1) * 100
@@ -431,31 +467,59 @@ class AdvancedBacktester:
     
     def _print_results(self, metrics: Dict):
         """Gibt die Backtest-Ergebnisse aus"""
+        if not metrics:
+            print("\n⚠️  Keine Metriken verfügbar!")
+            return
+            
         print("\n" + "="*60)
         print("📊 BACKTEST ERGEBNISSE")
         print("="*60)
         
         print(f"\n💰 Kapital:")
-        print(f"   Start: ${metrics['initial_capital']:,.2f}")
-        print(f"   Ende:  ${metrics['final_capital']:,.2f}")
-        print(f"   Total Return: {metrics['total_return_pct']}")
+        print(f"   Start: ${metrics.get('initial_capital', 0):,.2f}")
+        print(f"   Ende:  ${metrics.get('final_capital', 0):,.2f}")
+        print(f"   Total Return: {metrics.get('total_return_pct', 'N/A')}")
         
         print(f"\n📈 Performance:")
-        print(f"   Win Rate: {metrics['win_rate_pct']}")
-        print(f"   Profit Factor: {metrics['profit_factor']:.2f}")
-        print(f"   Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
-        print(f"   Max Drawdown: {metrics['max_drawdown_pct']}")
+        print(f"   Win Rate: {metrics.get('win_rate_pct', 'N/A')}")
+        print(f"   Profit Factor: {metrics.get('profit_factor', 0):.2f}")
+        print(f"   Sharpe Ratio: {metrics.get('sharpe_ratio', 0):.2f}")
+        print(f"   Max Drawdown: {metrics.get('max_drawdown_pct', 'N/A')}")
         
         print(f"\n📊 Trades:")
-        print(f"   Total: {metrics['total_trades']}")
-        print(f"   Gewinner: {metrics['winning_trades']}")
-        print(f"   Verlierer: {metrics['losing_trades']}")
-        print(f"   Avg Win/Loss Ratio: {metrics['avg_win_loss_ratio']:.2f}")
-        print(f"   Avg Duration: {metrics['avg_trade_duration_min']:.1f} Minuten")
+        print(f"   Total: {metrics.get('total_trades', 0)}")
+        print(f"   Gewinner: {metrics.get('winning_trades', 0)}")
+        print(f"   Verlierer: {metrics.get('losing_trades', 0)}")
+        print(f"   Avg Win/Loss Ratio: {metrics.get('avg_win_loss_ratio', 0):.2f}")
+        print(f"   Avg Duration: {metrics.get('avg_trade_duration_min', 0):.1f} Minuten")
         
         print(f"\n💸 Kosten:")
-        print(f"   Total Fees: ${metrics['total_fees']:.2f}")
-        print(f"   Total Slippage: ${metrics['total_slippage']:.2f}")
+        print(f"   Total Fees: ${metrics.get('total_fees', 0):.2f}")
+        print(f"   Total Slippage: ${metrics.get('total_slippage', 0):.2f}")
+        
+        print("="*60)
+        
+        print(f"\n💰 Kapital:")
+        print(f"   Start: ${metrics.get('initial_capital', 0):,.2f}")
+        print(f"   Ende:  ${metrics.get('final_capital', 0):,.2f}")
+        print(f"   Total Return: {metrics.get('total_return_pct', 'N/A')}")
+        
+        print(f"\n📈 Performance:")
+        print(f"   Win Rate: {metrics.get('win_rate_pct', 'N/A')}")
+        print(f"   Profit Factor: {metrics.get('profit_factor', 0):.2f}")
+        print(f"   Sharpe Ratio: {metrics.get('sharpe_ratio', 0):.2f}")
+        print(f"   Max Drawdown: {metrics.get('max_drawdown_pct', 'N/A')}")
+        
+        print(f"\n📊 Trades:")
+        print(f"   Total: {metrics.get('total_trades', 0)}")
+        print(f"   Gewinner: {metrics.get('winning_trades', 0)}")
+        print(f"   Verlierer: {metrics.get('losing_trades', 0)}")
+        print(f"   Avg Win/Loss Ratio: {metrics.get('avg_win_loss_ratio', 0):.2f}")
+        print(f"   Avg Duration: {metrics.get('avg_trade_duration_min', 0):.1f} Minuten")
+        
+        print(f"\n💸 Kosten:")
+        print(f"   Total Fees: ${metrics.get('total_fees', 0):.2f}")
+        print(f"   Total Slippage: ${metrics.get('total_slippage', 0):.2f}")
         
         print("="*60)
     
