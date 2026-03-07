@@ -3,9 +3,7 @@
 
 services:
   dolphin-bot:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/thesolution/dolphin-bot/backend:main
     container_name: dolphin-bot
     restart: unless-stopped
     environment:
@@ -24,18 +22,14 @@ services:
       retries: 3
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/thesolution/dolphin-bot/frontend:main
     container_name: dolphin-frontend
     restart: unless-stopped
     depends_on:
       - dolphin-bot
 
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+    image: ghcr.io/thesolution/dolphin-bot/nginx:main
     container_name: dolphin-nginx
     restart: unless-stopped
     environment:
@@ -52,7 +46,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dolphin-bot.rule=Host(\`bot.thesolution.at\`)"
+      - "traefik.http.routers.dolphin-bot.rule=Host(`bot.thesolution.at`)"
       - "traefik.http.routers.dolphin-bot.entrypoints=websecure"
       - "traefik.http.routers.dolphin-bot.tls.certresolver=letsencrypt"
       - "traefik.http.services.dolphin-bot.loadbalancer.server.port=80"
