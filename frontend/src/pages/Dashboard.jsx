@@ -401,9 +401,40 @@ const Dashboard = () => {
                 <select
                   value={config.timeframe}
                   onChange={(e) => setConfig({ ...config, timeframe: e.target.value })}
-                  className="glass-input"
                   disabled={status?.running}
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'var(--bg-glass)',
+                    border: '1px solid var(--border-glass)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.875rem',
+                    cursor: status?.running ? 'not-allowed' : 'pointer',
+                    opacity: status?.running ? 0.5 : 1,
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!status?.running) {
+                      e.target.style.borderColor = 'var(--accent-primary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!status?.running) {
+                      e.target.style.borderColor = 'var(--border-glass)';
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (!status?.running) {
+                      e.target.style.borderColor = 'var(--accent-primary)';
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!status?.running) {
+                      e.target.style.borderColor = 'var(--border-glass)';
+                    }
+                  }}
                 >
                   <option value="1m">1 Minute</option>
                   <option value="5m">5 Minuten</option>
