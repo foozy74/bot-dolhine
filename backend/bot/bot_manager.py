@@ -30,7 +30,31 @@ class BotManager:
     async def start(self, config: dict, broadcast_fn):
         self._running   = True
         self._broadcast = broadcast_fn
-        self.api        = BitunixAPI(config['api_key'], config['secret_key'])
+        
+        # Validate API keys before starting
+        if not config.get('api_key') or config['api_key'] in ['', 'dein_api_key_hier']:
+            await self._log("❌ Fehler: Bitunix API Key nicht konfiguriert!", "error")
+            self._running = False
+            self.status['running'] = False
+            return
+        
+        try:
+            self.api = BitunixAPI(config['api_key'], config['secret_key'])
+            # Test API connection
+            await self._log("🔌 Teste Bitunix API Verbindung...")
+            test_data = self.api.get_klines(config['symbol'], config['timeframe'], limit=5)
+            if not test_data or len(test_data) == 0:
+                await self._log("❌ Fehler: Konnte keine Daten von Bitunix API abrufen", "error")
+                self._running = False
+                self.status['running'] = False
+                return
+            await self._log(f"✅ API Verbindung OK - {len(test_data)} Candlesticks empfangen")
+        except Exception as e:
+            await self._log(f"❌ API Fehler: {str(e)}", "error")
+            self._running = False
+            self.status['running'] = False
+            return
+        
         self.status.update({
             "running": True,
             "symbol":  config['symbol'],
@@ -41,12 +65,15 @@ class BotManager:
         sleep_time   = interval_map.get(config['timeframe'], 300)
 
         await self._log(f"🐬 Bot gestartet | {config['symbol']} | {config['timeframe']}")
+        await self._broadcast(self.get_status())
 
         while self._running:
             try:
                 await self._tick(config, sleep_time)
             except Exception as e:
-                await self._log(f"❌ Fehler: {e}", "error")
+                error_msg = f"❌ Fehler in Trading Loop: {str(e)}"
+                await self._log(error_msg, "error")
+                print(error_msg)  # Also print to container logs
                 await asyncio.sleep(30)
 
     async def stop(self):
