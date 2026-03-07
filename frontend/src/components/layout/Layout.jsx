@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Activity, Settings, FileText, Menu, X } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const menuItems = [
     { path: '/', label: 'Dashboard', icon: Activity },
@@ -27,10 +38,7 @@ const Layout = ({ children }) => {
           borderRadius: 'var(--radius-md)',
           color: 'var(--text-primary)',
           cursor: 'pointer',
-          display: 'none',
-          '@media (max-width: 768px)': {
-            display: 'block'
-          }
+          display: isMobile ? 'block' : 'none'
         }}
       >
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -48,7 +56,7 @@ const Layout = ({ children }) => {
           position: 'fixed',
           height: '100vh',
           zIndex: 100,
-          transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transform: (!isMobile || isSidebarOpen) ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.3s ease',
         }}
       >
@@ -102,13 +110,9 @@ const Layout = ({ children }) => {
       {/* Main Content */}
       <main style={{ 
         flex: 1, 
-        marginLeft: '250px', 
-        padding: '2rem',
-        '@media (max-width: 768px)': {
-          marginLeft: 0,
-          padding: '1rem',
-          paddingTop: '4rem'
-        }
+        marginLeft: isMobile ? 0 : '250px', 
+        padding: isMobile ? '1rem' : '2rem',
+        paddingTop: isMobile ? '4rem' : '2rem'
       }}>
         {children}
       </main>

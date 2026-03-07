@@ -151,5 +151,6 @@ class BotManager:
             self.status.update({"position": None, "entry_price": 0, "stop_loss": 0, "take_profit": 0, "pnl": 0})
 
     async def _log(self, msg: str, level: str = "info"):
+        print(f"[{level.upper()}] {msg}")
         if self._broadcast:
             await self._broadcast({"type": "log", "level": level, "message": msg})

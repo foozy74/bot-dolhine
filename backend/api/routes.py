@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from bot.bot_manager import BotManager
+from services.settings_service import SettingsService
+from core.database import get_session
 import asyncio
 
 router      = APIRouter()
@@ -29,6 +31,19 @@ async def health():
 async def start(config: BotConfig):
     if bot_manager.is_running():
         raise HTTPException(400, "Bot läuft bereits!")
+    
+    # Load API keys from database if not provided
+    async for session in get_session():
+        settings_service = SettingsService(session)
+        if not config.api_key or config.api_key == '':
+            api_key_setting = await settings_service.get_setting('bitunix_api_key', include_secrets=True)
+            if api_key_setting and api_key_setting.get('value'):
+                config.api_key = api_key_setting['value']
+        if not config.secret_key or config.secret_key == '':
+            secret_key_setting = await settings_service.get_setting('bitunix_secret_key', include_secrets=True)
+            if secret_key_setting and secret_key_setting.get('value'):
+                config.secret_key = secret_key_setting['value']
+    
     asyncio.create_task(bot_manager.start(config.dict(), broadcast))
     return {"message": "Bot gestartet ✅"}
 

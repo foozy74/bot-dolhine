@@ -59,9 +59,7 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
   };
 
   const handleBlur = () => {
-    if (!validationError && localValue !== value) {
-      onSave(settingKey, localValue);
-    }
+    // Removed auto-save on blur - now only tracks changes
   };
 
   const isSaving = saveStatus?.key === settingKey && saveStatus?.status === 'saving';
@@ -76,7 +74,6 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
           checked={value}
           onChange={(e) => {
             handleChange(e.target.checked);
-            onSave(settingKey, e.target.checked);
           }}
         />
         <span className="glass-toggle-slider"></span>
@@ -148,6 +145,7 @@ const Settings = () => {
 
   const [activeCategory, setActiveCategory] = useState('trading');
   const [pendingChanges, setPendingChanges] = useState({});
+  const [saveMessage, setSaveMessage] = useState(null);
 
   const handleSettingChange = (key, value) => {
     setPendingChanges((prev) => ({ ...prev, [key]: value }));
@@ -199,14 +197,39 @@ const Settings = () => {
           <h1 style={{ marginBottom: '0.5rem' }}>⚙️ Einstellungen</h1>
           <p className="text-secondary">Konfiguriere den Trading Bot nach deinen Bedürfnissen</p>
         </div>
-        <button
-          onClick={resetToDefaults}
-          className="glass-button danger"
-          disabled={saveStatus?.status === 'resetting'}
-        >
-          <RefreshCw size={18} style={{ marginRight: '0.5rem' }} />
-          {saveStatus?.status === 'resetting' ? 'Setze zurück...' : 'Auf Standard zurücksetzen'}
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {hasPendingChanges && (
+            <button
+              onClick={async () => {
+                setSaveMessage(null);
+                try {
+                  const savePromises = Object.entries(pendingChanges).map(([key, value]) => 
+                    handleSaveSetting(key, value)
+                  );
+                  await Promise.all(savePromises);
+                  setSaveMessage({ type: 'success', text: 'Alle Einstellungen wurden erfolgreich gespeichert!' });
+                  setTimeout(() => setSaveMessage(null), 5000);
+                } catch (error) {
+                  setSaveMessage({ type: 'error', text: 'Fehler beim Speichern der Einstellungen!' });
+                  setTimeout(() => setSaveMessage(null), 5000);
+                }
+              }}
+              className="glass-button primary"
+              disabled={saveStatus?.status === 'saving'}
+            >
+              <Save size={18} style={{ marginRight: '0.5rem' }} />
+              {saveStatus?.status === 'saving' ? 'Speichere...' : `${Object.keys(pendingChanges).length} Änderungen speichern`}
+            </button>
+          )}
+          <button
+            onClick={resetToDefaults}
+            className="glass-button danger"
+            disabled={saveStatus?.status === 'resetting'}
+          >
+            <RefreshCw size={18} style={{ marginRight: '0.5rem' }} />
+            {saveStatus?.status === 'resetting' ? 'Setze zurück...' : 'Auf Standard zurücksetzen'}
+          </button>
+        </div>
       </div>
 
       {saveStatus?.status === 'success' && !saveStatus?.key && (
@@ -221,6 +244,22 @@ const Settings = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-success)' }}>
             <CheckCircle size={20} />
             <span>Einstellungen erfolgreich zurückgesetzt!</span>
+          </div>
+        </div>
+      )}
+
+      {saveMessage && (
+        <div 
+          className="glass-card animate-fade-in" 
+          style={{ 
+            marginBottom: '1rem', 
+            borderColor: saveMessage.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)',
+            background: saveMessage.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: saveMessage.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+            {saveMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+            <span>{saveMessage.text}</span>
           </div>
         </div>
       )}
@@ -308,14 +347,15 @@ const Settings = () => {
                       </p>
                     )}
                   </div>
-                  <SettingInput
-                    settingKey={key}
-                    config={schemaConfig}
-                    value={pendingChanges[key] !== undefined ? pendingChanges[key] : setting.value}
-                    onChange={handleSettingChange}
-                    onSave={handleSaveSetting}
-                    saveStatus={saveStatus}
-                  />
+                <SettingInput
+                  settingKey={key}
+                  value={pendingChanges[key] !== undefined ? pendingChanges[key] : setting.value}
+                  onChange={handleSettingChange}
+                  onSave={handleSaveSetting}
+                  config={schemaConfig}
+                  saveStatus={saveStatus}
+                  hasChanges={pendingChanges[key] !== undefined}
+                />
                 </div>
               );
             })}

@@ -8,14 +8,13 @@ export const useSettings = () => {
   const [saveStatus, setSaveStatus] = useState(null);
 
   // Fetch all settings
-  const fetchSettings = useCallback(async () => {
-    setLoading(true);
+  const fetchSettings = useCallback(async (includeSecrets = false) => {
     try {
-      const response = await fetch('/api/settings/');
+      const url = includeSecrets ? '/api/settings/?include_secrets=true' : '/api/settings/';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch settings');
       const data = await response.json();
       setSettings(data);
-      setError(null);
     } catch (err) {
       setError(err.message);
     } finally {

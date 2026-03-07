@@ -32,7 +32,14 @@ class BitunixAPI:
             self.base_url + endpoint,
             params={"symbol": symbol, "interval": interval, "limit": limit}
         )
-        return r.json()
+        try:
+            data = r.json()
+            if isinstance(data, dict):
+                return data.get("data", [])
+            return data
+        except Exception as e:
+            print(f"[{r.status_code}] API Error: {r.text[:100]}")
+            return []
 
     def get_ticker(self, symbol: str):
         r = self.session.get(

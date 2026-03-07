@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useSettings } from '../hooks/useSettings';
 import { 
   LineChart, 
   Line, 
@@ -26,6 +27,7 @@ import {
 
 const Dashboard = () => {
   const { status, trades, isConnected } = useWebSocket();
+  const { settings } = useSettings();
   const [priceHistory, setPriceHistory] = useState([]);
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
@@ -38,7 +40,41 @@ const Dashboard = () => {
     dry_run: true,
   });
 
-  // Update price history when status changes
+  // Load settings when available
+  useEffect(() => {
+    if (settings.api?.bitunix_api_key?.value && settings.api?.bitunix_secret_key?.value) {
+      setConfig(prev => ({
+        ...prev,
+        api_key: settings.api.bitunix_api_key.value,
+        secret_key: settings.api.bitunix_secret_key.value,
+      }));
+    }
+    if (settings.trading?.symbol?.value) {
+      setConfig(prev => ({
+        ...prev,
+        symbol: settings.trading.symbol.value,
+      }));
+    }
+    if (settings.trading?.timeframe?.value) {
+      setConfig(prev => ({
+        ...prev,
+        timeframe: settings.trading.timeframe.value,
+      }));
+    }
+    if (settings.trading?.risk_pct?.value !== undefined) {
+      setConfig(prev => ({
+        ...prev,
+        risk_pct: settings.trading.risk_pct.value,
+      }));
+    }
+    if (settings.trading?.dry_run?.value !== undefined) {
+      setConfig(prev => ({
+        ...prev,
+        dry_run: settings.trading.dry_run.value,
+      }));
+    }
+  }, [settings]);
+
   useEffect(() => {
     if (status?.current_price) {
       setPriceHistory((prev) => {
@@ -56,10 +92,20 @@ const Dashboard = () => {
   const handleStart = async () => {
     setIsStarting(true);
     try {
+      // Send only non-sensitive config to backend
+      const configToSend = {
+        api_key: '', // Backend will load from DB
+        secret_key: '', // Backend will load from DB
+        symbol: config.symbol,
+        timeframe: config.timeframe,
+        risk_pct: config.risk_pct,
+        dry_run: config.dry_run,
+      };
+      
       const response = await fetch('/api/bot/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify(configToSend),
       });
       if (!response.ok) {
         const error = await response.json();
