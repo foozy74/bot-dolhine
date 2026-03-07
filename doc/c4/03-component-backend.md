@@ -95,12 +95,25 @@ SHOW_LEGEND()
 
 ### Bitunix API (`bot/bitunix_api.py`)
 - **Typ**: Python Klasse
+- **Authentication**: SHA256 mit Nonce (Bitunix OpenAPI Standard)
+- **API Base**: https://fapi.bitunix.com
 - **Methoden**:
-  - `get_klines()` - Candlestick Daten
+  - `get_klines()` - Candlestick Daten (Futures Market)
   - `get_ticker()` - Aktueller Preis
+  - `get_tickers()` - Mehrere Preise gleichzeitig
+  - `get_depth()` - Orderbuch Tiefe
+  - `get_balance()` - Kontostand
+  - `get_positions()` - Offene Positionen
+  - `place_order()` - Order platzieren (Limit/Market)
+  - `cancel_order()` - Order stornieren
+- **Signature Generation**:
+  ```python
+  digest = SHA256(nonce + timestamp + api_key + query_params + body)
+  sign = SHA256(digest + secret_key)
+  ```
   - `get_balance()` - Kontostand
   - `place_order()` - Order platzieren
-- **Auth**: HMAC-SHA256 Signatur
+- **Auth**: SHA256 mit Nonce (Bitunix OpenAPI Standard)
 
 ### WebSocket Handler
 - **Typ**: FastAPI WebSocket

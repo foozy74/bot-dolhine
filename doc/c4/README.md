@@ -151,5 +151,40 @@ app.mount("/", StaticFiles(directory="../frontend", html=True))
 
 ---
 
+## 🔄 Architektur-Updates
+
+### 2026-03-07 - Bitunix API Integration Update
+
+**Änderung**: Bitunix API Client wurde auf offiziellen Bitunix OpenAPI Standard aktualisiert.
+
+**Authentication:**
+- **Vorher**: HMAC-SHA256 (eigene Implementierung)
+- **Nachher**: SHA256 mit Nonce (Bitunix OpenAPI Standard)
+
+**Signature Generation:**
+```python
+# Neu: Standard-konforme Signatur
+digest = SHA256(nonce + timestamp + api_key + query_params + body)
+sign = SHA256(digest + secret_key)
+
+# Headers: api-key, sign, nonce, timestamp
+```
+
+**API Endpoints:**
+- **Base URL**: `https://fapi.bitunix.com` (Futures API)
+- **Endpoints**: `/api/v1/futures/market/*`
+- **Neue Methoden**: `get_tickers()`, `get_depth()`, `get_positions()`, `cancel_order()`
+
+**Referenz**: [Bitunix Official OpenAPI](https://github.com/BitunixOfficial/open-api)
+
+**Vorteile:**
+- Kompatibel mit offizieller Bitunix API
+- Verbesserte Sicherheit durch Nonce
+- Mehr API-Funktionen verfügbar
+- Bessere Fehlerbehandlung
+
+---
+
 *Dokumentation erstellt am: 2025-03-06*
-*Version: 1.0.1*
+*Letztes Update: 2026-03-07*
+*Version: 1.1.0*

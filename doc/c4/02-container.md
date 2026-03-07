@@ -25,7 +25,7 @@ System_Boundary(delfin, "Delfin Bot System") {
     Container_Boundary(backend, "Backend") {
         Container(fastapi, "FastAPI", "Python 3.12", "REST API & WebSocket")
         Container(bot_engine, "Bot Engine", "Python", "Trading-Logik & Strategie")
-        Container(bitunix_client, "Bitunix Client", "Python", "Exchange API Client")
+        Container(bitunix_client, "Bitunix Client", "Python", "Exchange API Client (SHA256 + Nonce)")
     }
     
     ContainerDb(sqlite, "SQLite", "SQLite 3", "Settings & Trade History")
@@ -95,10 +95,11 @@ SHOW_LEGEND()
 ### Bitunix Client
 - **Technologie**: Python + requests
 - **Aufgaben**:
-  - API Authentication (HMAC-SHA256)
-  - Market Data (Klines, Ticker)
-  - Order Management
-  - Balance Abfragen
+  - API Authentication (SHA256 mit Nonce)
+  - Market Data (Klines, Ticker, Depth)
+  - Order Management (Place, Cancel)
+  - Balance & Positions Abfragen
+  - **API Base**: https://fapi.bitunix.com (Futures API)
 
 ### SQLite Datenbank
 - **Technologie**: SQLite 3 + aiosqlite
