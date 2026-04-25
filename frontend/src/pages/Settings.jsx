@@ -11,7 +11,10 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  ChevronRight,
+  Shield,
+  Cpu
 } from 'lucide-react';
 
 const categoryIcons = {
@@ -22,10 +25,10 @@ const categoryIcons = {
 };
 
 const categoryLabels = {
-  trading: '📊 Trading',
-  api: '🔑 API',
-  notifications: '🔔 Benachrichtigungen',
-  system: '🖥️ System',
+  trading: 'TRADING_PARAMS',
+  api: 'AUTHENTICATION_KEYS',
+  notifications: 'ALERT_SYSTEM',
+  system: 'CORE_ENGINE',
 };
 
 const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus }) => {
@@ -37,13 +40,13 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
     if (config.type === 'float' || config.type === 'int') {
       const numVal = Number(val);
       if (isNaN(numVal)) {
-        return 'Muss eine Zahl sein';
+        return 'MUST_BE_NUMERIC';
       }
       if (config.min !== undefined && numVal < config.min) {
-        return `Minimum: ${config.min}`;
+        return `MIN_VAL: ${config.min}`;
       }
       if (config.max !== undefined && numVal > config.max) {
-        return `Maximum: ${config.max}`;
+        return `MAX_VAL: ${config.max}`;
       }
     }
     return null;
@@ -58,74 +61,78 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
     }
   };
 
-  const handleBlur = () => {
-    // Removed auto-save on blur - now only tracks changes
-  };
-
   const isSaving = saveStatus?.key === settingKey && saveStatus?.status === 'saving';
   const isSuccess = saveStatus?.key === settingKey && saveStatus?.status === 'success';
   const isError = saveStatus?.key === settingKey && saveStatus?.status === 'error';
 
   if (config.type === 'bool') {
     return (
-      <label className="glass-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <input
-          type="checkbox"
-          checked={value}
-          onChange={(e) => {
-            handleChange(e.target.checked);
-          }}
-        />
-        <span className="glass-toggle-slider"></span>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          {value ? 'Aktiviert' : 'Deaktiviert'}
-        </span>
-        {isSaving && <Loader2 size={16} className="animate-pulse" />}
-        {isSuccess && <CheckCircle size={16} style={{ color: 'var(--accent-success)' }} />}
-        {isError && <AlertCircle size={16} style={{ color: 'var(--accent-danger)' }} />}
-      </label>
+      <div className="flex items-center justify-between p-md rounded-xl bg-white/5 border border-white/5">
+        <div className="flex items-center gap-sm">
+          <span className="font-mono text-[11px] text-dim uppercase">
+            {value ? 'STATE_ACTIVE' : 'STATE_DISABLED'}
+          </span>
+          {isSaving && <Loader2 size={14} className="animate-spin text-teal" />}
+          {isSuccess && <CheckCircle size={14} className="text-teal" />}
+          {isError && <AlertCircle size={14} className="text-red-400" />}
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={value}
+            onChange={(e) => handleChange(e.target.checked)}
+          />
+          <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
+        </label>
+      </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <input
-          type={config.is_secret && !showSecret ? 'password' : config.type === 'int' || config.type === 'float' ? 'number' : 'text'}
-          value={localValue}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={handleBlur}
-          className="glass-input"
-          style={{
-            flex: 1,
-            borderColor: validationError ? 'var(--accent-danger)' : undefined,
-          }}
-          placeholder={config.description}
-          step={config.type === 'float' ? '0.01' : config.type === 'int' ? '1' : undefined}
-          min={config.min}
-          max={config.max}
-        />
-        {config.is_secret && (
-          <button
-            onClick={() => setShowSecret(!showSecret)}
-            className="glass-button"
-            style={{ padding: '0.5rem' }}
-          >
-            {showSecret ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+    <div className="relative flex flex-col gap-xs">
+      <div className="flex items-center gap-sm">
+        <div className="relative flex-1">
+          <input
+            type={config.is_secret && !showSecret ? 'password' : config.type === 'int' || config.type === 'float' ? 'number' : 'text'}
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
+            className={`glass-input font-mono text-sm ${validationError ? 'border-red-400' : ''}`}
+            style={{ 
+              borderColor: validationError ? '#ef4444' : undefined,
+              paddingRight: config.is_secret ? '45px' : '16px'
+            }}
+            placeholder={config.description}
+            step={config.type === 'float' ? '0.01' : config.type === 'int' ? '1' : undefined}
+            min={config.min}
+            max={config.max}
+          />
+          {config.is_secret && (
+            <button
+              onClick={() => setShowSecret(!showSecret)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-main transition-colors"
+              type="button"
+            >
+              {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          )}
+        </div>
+        {(isSaving || isSuccess || isError) && (
+          <div className="flex items-center justify-center w-8">
+            {isSaving && <Loader2 size={16} className="animate-spin text-teal" />}
+            {isSuccess && <CheckCircle size={16} className="text-teal" />}
+            {isError && <AlertCircle size={16} className="text-red-400" />}
+          </div>
         )}
-        {isSaving && <Loader2 size={18} className="animate-pulse" />}
-        {isSuccess && <CheckCircle size={18} style={{ color: 'var(--accent-success)' }} />}
-        {isError && <AlertCircle size={18} style={{ color: 'var(--accent-danger)' }} />}
       </div>
       {validationError && (
-        <p style={{ color: 'var(--accent-danger)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+        <p className="text-red-400 font-mono text-[9px] uppercase tracking-wider px-sm">
           {validationError}
         </p>
       )}
       {(config.min !== undefined || config.max !== undefined) && config.type !== 'bool' && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
-          Bereich: {config.min !== undefined ? config.min : '-∞'} bis {config.max !== undefined ? config.max : '∞'}
+        <p className="text-faint font-mono text-[9px] uppercase tracking-wider px-sm">
+          VALID_RANGE: [{config.min !== undefined ? config.min : '-INF'}, {config.max !== undefined ? config.max : 'INF'}]
         </p>
       )}
     </div>
@@ -168,21 +175,19 @@ const Settings = () => {
 
   if (loading && Object.keys(settings).length === 0) {
     return (
-      <div className="flex items-center justify-center" style={{ height: '60vh' }}>
-        <div className="text-center">
-          <Loader2 size={48} className="animate-pulse" style={{ margin: '0 auto 1rem' }} />
-          <p className="text-secondary">Lade Einstellungen...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 size={48} className="animate-spin text-teal opacity-20 mb-md" />
+        <p className="font-mono text-xs tracking-widest text-faint">FETCHING_CONFIGURATION...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
-        <AlertCircle size={48} style={{ color: 'var(--accent-danger)', marginBottom: '1rem' }} />
-        <h2>Fehler beim Laden</h2>
-        <p className="text-secondary">{error}</p>
+      <div className="terminal-box text-center py-20" data-title="SYSTEM_ERROR">
+        <AlertCircle size={48} className="text-red-400 mx-auto mb-md" />
+        <h2 className="text-xl font-bold mb-xs">INITIALIZATION_FAILURE</h2>
+        <p className="text-faint font-mono text-xs uppercase">{error}</p>
       </div>
     );
   }
@@ -191,13 +196,21 @@ const Settings = () => {
   const currentCategorySchema = schema[activeCategory] || {};
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="flex flex-col gap-xl">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
         <div>
-          <h1 style={{ marginBottom: '0.5rem' }}>⚙️ Einstellungen</h1>
-          <p className="text-secondary">Konfiguriere den Trading Bot nach deinen Bedürfnissen</p>
+          <h2 className="text-3xl font-bold tracking-tight mb-xs">CORE_CONFIG_MANIFEST</h2>
+          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
+            <span className="flex items-center gap-xs">
+              <span className="w-2 h-2 rounded-full bg-blue" />
+              ENV_PRODUCTION
+            </span>
+            <span>•</span>
+            <span className="text-teal">LOCAL_STORAGE_SYNCED</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+
+        <div className="flex items-center gap-sm">
           {hasPendingChanges && (
             <button
               onClick={async () => {
@@ -207,155 +220,116 @@ const Settings = () => {
                     handleSaveSetting(key, value)
                   );
                   await Promise.all(savePromises);
-                  setSaveMessage({ type: 'success', text: 'Alle Einstellungen wurden erfolgreich gespeichert!' });
+                  setSaveMessage({ type: 'success', text: 'MANIFEST_UPDATED_SUCCESSFULLY' });
                   setTimeout(() => setSaveMessage(null), 5000);
                 } catch (error) {
-                  setSaveMessage({ type: 'error', text: 'Fehler beim Speichern der Einstellungen!' });
+                  setSaveMessage({ type: 'error', text: 'SAVE_SEQUENCE_ABORTED' });
                   setTimeout(() => setSaveMessage(null), 5000);
                 }
               }}
-              className="glass-button primary"
+              className="btn btn-primary"
               disabled={saveStatus?.status === 'saving'}
             >
-              <Save size={18} style={{ marginRight: '0.5rem' }} />
-              {saveStatus?.status === 'saving' ? 'Speichere...' : `${Object.keys(pendingChanges).length} Änderungen speichern`}
+              <Save size={16} />
+              {saveStatus?.status === 'saving' ? 'WRITING...' : `COMMIT_${Object.keys(pendingChanges).length}_CHANGES`}
             </button>
           )}
           <button
             onClick={resetToDefaults}
-            className="glass-button danger"
+            className="btn btn-outline"
+            style={{ borderColor: '#ef4444', color: '#ef4444' }}
             disabled={saveStatus?.status === 'resetting'}
           >
-            <RefreshCw size={18} style={{ marginRight: '0.5rem' }} />
-            {saveStatus?.status === 'resetting' ? 'Setze zurück...' : 'Auf Standard zurücksetzen'}
+            <RefreshCw size={16} className={saveStatus?.status === 'resetting' ? 'animate-spin' : ''} />
+            RESET_DEFAULTS
           </button>
         </div>
-      </div>
-
-      {saveStatus?.status === 'success' && !saveStatus?.key && (
-        <div 
-          className="glass-card" 
-          style={{ 
-            marginBottom: '1rem', 
-            borderColor: 'var(--accent-success)',
-            background: 'rgba(34, 197, 94, 0.1)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-success)' }}>
-            <CheckCircle size={20} />
-            <span>Einstellungen erfolgreich zurückgesetzt!</span>
-          </div>
-        </div>
-      )}
+      </section>
 
       {saveMessage && (
-        <div 
-          className="glass-card animate-fade-in" 
-          style={{ 
-            marginBottom: '1rem', 
-            borderColor: saveMessage.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)',
-            background: saveMessage.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: saveMessage.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {saveMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            <span>{saveMessage.text}</span>
+        <div className={`terminal-box animate-fade-in ${saveMessage.type === 'success' ? 'border-teal/30' : 'border-red-400/30'}`} data-title="NOTIFICATION" style={{ padding: '16px' }}>
+          <div className={`flex items-center gap-md font-mono text-xs ${saveMessage.type === 'success' ? 'text-teal' : 'text-red-400'}`}>
+            {saveMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            {saveMessage.text}
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '2rem' }}>
-        {/* Category Sidebar */}
-        <div className="glass-card" style={{ padding: '1rem', height: 'fit-content' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            Kategorien
-          </h3>
-          {Object.keys(categoryLabels).map((category) => {
-            const Icon = categoryIcons[category];
-            return (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.75rem 1rem',
-                  marginBottom: '0.5rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: activeCategory === category ? 'var(--bg-glass)' : 'transparent',
-                  border: activeCategory === category ? '1px solid var(--border-glass)' : '1px solid transparent',
-                  color: activeCategory === category ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'left',
-                }}
-              >
-                <Icon size={20} />
-                <span style={{ fontSize: '0.875rem' }}>{categoryLabels[category]}</span>
-              </button>
-            );
-          })}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '32px' }} className="flex-col lg:grid">
+        {/* Category Navigation */}
+        <div className="terminal-box h-fit" data-title="SYSTEM_MODULES" style={{ padding: '12px' }}>
+          <div className="flex flex-col gap-xs">
+            {Object.keys(categoryLabels).map((category) => {
+              const Icon = categoryIcons[category];
+              const isActive = activeCategory === category;
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`
+                    flex items-center justify-between px-md py-sm rounded-xl transition-all duration-200 group
+                    ${isActive 
+                      ? 'bg-teal/10 text-teal border border-teal/20' 
+                      : 'text-dim hover:text-main hover:bg-white/5 border border-transparent'}
+                  `}
+                  style={{
+                    background: isActive ? 'rgba(125, 211, 192, 0.08)' : 'transparent',
+                    borderColor: isActive ? 'rgba(125, 211, 192, 0.2)' : 'transparent',
+                    color: isActive ? 'var(--teal)' : 'var(--text-dim)',
+                    textAlign: 'left',
+                    width: '100%',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div className="flex items-center gap-md">
+                    <Icon size={18} />
+                    <span className="font-mono text-[11px] font-bold tracking-wider">{categoryLabels[category]}</span>
+                  </div>
+                  <ChevronRight size={14} className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Settings Content */}
-        <div>
-          <div className="glass-card">
-            <h2 style={{ marginBottom: '1.5rem' }}>{categoryLabels[activeCategory]}</h2>
-            
+        {/* Settings Form */}
+        <div className="terminal-box" data-title={categoryLabels[activeCategory]}>
+          <div className="flex flex-col gap-lg py-md">
             {Object.entries(currentCategorySettings).map(([key, setting]) => {
               const schemaConfig = currentCategorySchema[key] || {};
+              const label = key.replace(/_/g, ' ').toUpperCase();
               return (
                 <div 
                   key={key} 
-                  style={{ 
-                    marginBottom: '1.5rem',
-                    paddingBottom: '1.5rem',
-                    borderBottom: '1px solid var(--border-glass)'
-                  }}
+                  className="flex flex-col gap-md pb-lg border-b border-white/5 last:border-0 last:pb-0"
                 >
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <label 
-                      style={{ 
-                        fontWeight: 500, 
-                        fontSize: '0.875rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  <div className="flex flex-col gap-xs">
+                    <div className="flex items-center gap-sm">
+                      <span className="font-mono text-xs font-bold text-main tracking-wide">{label}</span>
                       {schemaConfig.is_secret && (
-                        <span 
-                          style={{ 
-                            fontSize: '0.625rem', 
-                            padding: '0.125rem 0.375rem',
-                            background: 'var(--accent-warning)',
-                            color: 'var(--bg-primary)',
-                            borderRadius: '4px',
-                            fontWeight: 600
-                          }}
-                        >
-                          SECRET
-                        </span>
+                        <div className="badge badge-purple flex items-center gap-xs" style={{ fontSize: '8px' }}>
+                          <Shield size={10} /> ENCRYPTED_STORAGE
+                        </div>
                       )}
-                    </label>
+                    </div>
                     {schemaConfig.description && (
-                      <p className="text-secondary" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                        {schemaConfig.description}
+                      <p className="text-faint font-mono text-[10px] leading-relaxed uppercase">
+                        // {schemaConfig.description}
                       </p>
                     )}
                   </div>
-                <SettingInput
-                  settingKey={key}
-                  value={pendingChanges[key] !== undefined ? pendingChanges[key] : setting.value}
-                  onChange={handleSettingChange}
-                  onSave={handleSaveSetting}
-                  config={schemaConfig}
-                  saveStatus={saveStatus}
-                  hasChanges={pendingChanges[key] !== undefined}
-                />
+                  
+                  <div className="max-w-xl">
+                    <SettingInput
+                      settingKey={key}
+                      value={pendingChanges[key] !== undefined ? pendingChanges[key] : setting.value}
+                      onChange={handleSettingChange}
+                      onSave={handleSaveSetting}
+                      config={schemaConfig}
+                      saveStatus={saveStatus}
+                      hasChanges={pendingChanges[key] !== undefined}
+                    />
+                  </div>
                 </div>
               );
             })}

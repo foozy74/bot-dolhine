@@ -24,7 +24,10 @@ import {
   Activity,
   Clock,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Zap,
+  Cpu,
+  BarChart2
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -140,7 +143,7 @@ const Dashboard = () => {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(value);
@@ -151,350 +154,334 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>🐬 Delfin Bot Dashboard</h1>
-        <p className="text-secondary">
-          {isConnected ? '✅ Verbunden' : '❌ Nicht verbunden'} • 
-          {status?.running ? '🟢 Aktiv' : '🔴 Inaktiv'}
-        </p>
-      </div>
-
-      {/* Status Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Bot Status Card */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <Activity size={24} style={{ color: status?.running ? 'var(--accent-success)' : 'var(--accent-warning)' }} />
-            <h3>Bot Status</h3>
-          </div>
-          <p style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-            {status?.running ? 'AKTIV' : 'INAKTIV'}
-          </p>
-          <p className="text-secondary" style={{ fontSize: '0.875rem' }}>
-            {status?.symbol || 'Kein Symbol'} • {status?.timeframe || '--'}
-          </p>
-          {status?.dry_run && (
-            <div style={{ 
-              marginTop: '0.75rem', 
-              padding: '0.25rem 0.5rem', 
-              background: 'var(--accent-warning)', 
-              borderRadius: '4px',
-              display: 'inline-block',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: 'var(--bg-primary)'
-            }}>
-              DRY RUN MODE
-            </div>
-          )}
-        </div>
-
-        {/* Current Price Card */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <DollarSign size={24} style={{ color: 'var(--accent-primary)' }} />
-            <h3>Aktueller Preis</h3>
-          </div>
-          <p style={{ fontSize: '1.75rem', fontWeight: 600 }}>
-            {status?.current_price ? formatCurrency(status.current_price) : '--'}
-          </p>
-          <p className="text-secondary" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            {status?.last_update ? `Letztes Update: ${new Date(status.last_update).toLocaleTimeString('de-DE')}` : 'Keine Daten'}
-          </p>
-        </div>
-
-        {/* Position Card */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            {status?.position === 'LONG' ? (
-              <TrendingUp size={24} style={{ color: 'var(--accent-success)' }} />
-            ) : status?.position === 'SHORT' ? (
-              <TrendingDown size={24} style={{ color: 'var(--accent-danger)' }} />
-            ) : (
-              <Clock size={24} style={{ color: 'var(--text-muted)' }} />
-            )}
-            <h3>Position</h3>
-          </div>
-          {status?.position ? (
-            <>
-              <p style={{ 
-                fontSize: '1.25rem', 
-                fontWeight: 600,
-                color: status.position === 'LONG' ? 'var(--accent-success)' : 'var(--accent-danger)'
-              }}>
-                {status.position}
-              </p>
-              <p className="text-secondary" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                Entry: {formatCurrency(status.entry_price || 0)}
-              </p>
-              <p className="text-secondary" style={{ fontSize: '0.875rem' }}>
-                SL: {formatCurrency(status.stop_loss || 0)} • TP: {formatCurrency(status.take_profit || 0)}
-              </p>
-            </>
-          ) : (
-            <p className="text-secondary">Keine offene Position</p>
-          )}
-        </div>
-
-        {/* PnL Card */}
-        <div className="glass-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <DollarSign size={24} style={{ color: status?.pnl >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }} />
-            <h3>PnL</h3>
-          </div>
-          <p style={{ 
-            fontSize: '1.75rem', 
-            fontWeight: 600,
-            color: status?.pnl > 0 ? 'var(--accent-success)' : status?.pnl < 0 ? 'var(--accent-danger)' : 'var(--text-primary)'
-          }}>
-            {status?.pnl !== undefined ? formatPercent(status.pnl) : '--'}
-          </p>
-          <p className="text-secondary" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Total: {status?.total_pnl !== undefined ? formatPercent(status.total_pnl) : '--'}
-          </p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-        {/* Price Chart */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}>📈 Preisverlauf</h3>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={priceHistory}>
-                <defs>
-                  <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-glass)" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="var(--text-secondary)"
-                  tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                />
-                <YAxis 
-                  domain={['auto', 'auto']}
-                  stroke="var(--text-secondary)"
-                  tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                  tickFormatter={(value) => `$${value.toFixed(0)}`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--bg-secondary)', 
-                    border: '1px solid var(--border-glass)',
-                    borderRadius: 'var(--radius-md)'
-                  }}
-                  labelStyle={{ color: 'var(--text-primary)' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="price" 
-                  stroke="var(--accent-primary)" 
-                  fillOpacity={1} 
-                  fill="url(#priceGradient)" 
-                  strokeWidth={2}
-                />
-                <Scatter
-                  data={priceHistory.filter(point => point.position && point.entry_price)}
-                  dataKey="entry_price"
-                  fill={priceHistory.length > 0 && priceHistory[priceHistory.length - 1]?.position === 'LONG' ? '#22c55e' : '#ef4444'}
-                  shape="circle"
-                  r={6}
-                  name="Entry"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }} />
-              <span className="text-secondary">Long Entry</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
-              <span className="text-secondary">Short Entry</span>
-            </div>
+    <div className="flex flex-col gap-xl">
+      {/* Dashboard Header Section */}
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight mb-xs">OPERATIONAL_DASHBOARD</h2>
+          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
+            <span className="flex items-center gap-xs">
+              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-teal' : 'bg-red-500'}`} />
+              WS_{isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-xs">
+              <span className={`w-2 h-2 rounded-full ${status?.running ? 'bg-teal' : 'bg-orange-500'}`} />
+              BOT_{status?.running ? 'EXECUTING' : 'STANDBY'}
+            </span>
+            <span>•</span>
+            <span className="text-teal">TRADING_SYST_V4.0</span>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}>🎮 Steuerung</h3>
-          
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Trading Paar
-            </label>
-            <input
-              type="text"
-              value={config.symbol}
-              onChange={(e) => setConfig({ ...config, symbol: e.target.value.toUpperCase() })}
-              className="glass-input"
-              placeholder="z.B. BTCUSDT"
-              disabled={status?.running}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Timeframe
-            </label>
-            <select
-              value={config.timeframe}
-              onChange={(e) => setConfig({ ...config, timeframe: e.target.value })}
-              disabled={status?.running}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'var(--bg-glass)',
-                border: '1px solid var(--border-glass)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--text-primary)',
-                fontSize: '0.875rem',
-                cursor: status?.running ? 'not-allowed' : 'pointer',
-                opacity: status?.running ? 0.5 : 1,
-                outline: 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <option value="1m">1 Minute</option>
-              <option value="5m">5 Minuten</option>
-              <option value="15m">15 Minuten</option>
-              <option value="1h">1 Stunde</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Risk %
-            </label>
-            <input
-              type="number"
-              value={config.risk_pct}
-              onChange={(e) => setConfig({ ...config, risk_pct: parseFloat(e.target.value) })}
-              className="glass-input"
-              step="0.01"
-              min="0.01"
-              max="0.10"
-              disabled={status?.running}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label className="glass-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={config.dry_run}
-                onChange={(e) => setConfig({ ...config, dry_run: e.target.checked })}
-                disabled={status?.running}
-                style={{ display: 'none' }}
-              />
-              <div style={{
-                width: '44px',
-                height: '24px',
-                background: config.dry_run ? 'var(--accent-success)' : 'var(--bg-tertiary)',
-                borderRadius: '12px',
-                position: 'relative',
-                transition: 'background 0.2s ease',
-              }}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  background: 'white',
-                  borderRadius: '50%',
-                  position: 'absolute',
-                  top: '2px',
-                  left: config.dry_run ? '22px' : '2px',
-                  transition: 'left 0.2s ease',
-                }} />
-              </div>
-              <span className="text-secondary" style={{ fontSize: '0.875rem' }}>Dry Run Mode</span>
-            </label>
-          </div>
-
+        <div className="flex items-center gap-sm">
           {!status?.running ? (
             <button
               onClick={handleStart}
               disabled={isStarting}
-              className="glass-button primary"
-              style={{ width: '100%', justifyContent: 'center' }}
+              className="btn btn-primary"
             >
-              <Play size={18} />
-              {isStarting ? 'Starte...' : 'START'}
+              <Play size={16} fill="currentColor" />
+              {isStarting ? 'INITIALIZING...' : 'START_ENGINE'}
             </button>
           ) : (
             <button
               onClick={handleStop}
               disabled={isStopping}
-              className="glass-button danger"
-              style={{ width: '100%', justifyContent: 'center' }}
+              className="btn btn-outline"
+              style={{ borderColor: '#ef4444', color: '#ef4444' }}
             >
-              <Square size={18} />
-              {isStopping ? 'Stoppe...' : 'STOP'}
+              <Square size={16} fill="currentColor" />
+              {isStopping ? 'TERMINATING...' : 'STOP_ENGINE'}
             </button>
           )}
         </div>
+      </section>
+
+      {/* Main Grid: Stats & Real-time Info */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+        <div className="terminal-box" data-title="CURRENT_PRICE">
+          <div className="flex items-center justify-between mb-sm">
+            <DollarSign className="text-teal" size={20} />
+            <span className="font-mono text-[10px] text-faint">USDT_SPOT</span>
+          </div>
+          <div className="text-4xl font-bold font-display tracking-tight text-white mb-xs">
+            {status?.current_price ? formatCurrency(status.current_price) : '$0.00'}
+          </div>
+          <div className="font-mono text-[10px] text-faint flex items-center gap-xs">
+            <Clock size={12} />
+            UPDATED: {status?.last_update ? new Date(status.last_update).toLocaleTimeString('de-DE') : 'WAITING_FOR_DATA'}
+          </div>
+        </div>
+
+        <div className="terminal-box" data-title="ACTIVE_POSITION">
+          <div className="flex items-center justify-between mb-sm">
+            {status?.position === 'LONG' ? <TrendingUp className="text-teal" size={20} /> : 
+             status?.position === 'SHORT' ? <TrendingDown className="text-red-400" size={20} /> : 
+             <Activity className="text-faint" size={20} />}
+            <span className="font-mono text-[10px] text-faint">DELTA_EXPOSURE</span>
+          </div>
+          {status?.position ? (
+            <div className="flex flex-col">
+              <div className={`text-3xl font-bold font-display ${status.position === 'LONG' ? 'text-teal' : 'text-red-400'}`}>
+                {status.position}
+              </div>
+              <div className="grid grid-cols-2 gap-md mt-sm">
+                <div>
+                  <div className="font-mono text-[9px] text-faint uppercase">Entry_Px</div>
+                  <div className="font-mono text-xs font-bold">{formatCurrency(status.entry_price || 0)}</div>
+                </div>
+                <div>
+                  <div className="font-mono text-[9px] text-faint uppercase">PnL_Unrealized</div>
+                  <div className={`font-mono text-xs font-bold ${status.pnl >= 0 ? 'text-teal' : 'text-red-400'}`}>
+                    {formatPercent(status.pnl || 0)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-[70px] flex items-center justify-center border border-dashed border-white/5 rounded-lg text-faint font-mono text-[10px]">
+              NO_ACTIVE_MARKET_ORDERS
+            </div>
+          )}
+        </div>
+
+        <div className="terminal-box" data-title="STRATEGY_PERFORMANCE">
+          <div className="flex items-center justify-between mb-sm">
+            <BarChart2 className="text-blue" size={20} />
+            <span className="font-mono text-[10px] text-faint">SESSION_STATS</span>
+          </div>
+          <div className="flex flex-col">
+            <div className={`text-4xl font-bold font-display ${status?.total_pnl >= 0 ? 'text-teal' : 'text-red-400'}`}>
+              {status?.total_pnl !== undefined ? formatPercent(status.total_pnl) : '0.00%'}
+            </div>
+            <div className="flex items-center gap-sm mt-xs">
+              <div className="badge badge-blue">BOT_{status?.running ? 'ACTIVE' : 'IDLE'}</div>
+              <div className="badge badge-teal">{status?.dry_run ? 'SIM_MODE' : 'LIVE_EXEC'}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Recent Trades */}
-      <div className="glass-card">
-        <h3 style={{ marginBottom: '1rem' }}>📜 Letzte Trades</h3>
-        <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+      {/* Chart & Control Panel Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }} className="flex-col lg:grid">
+        <div className="terminal-box" data-title="REALTIME_MARKET_FLOW" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+          <div className="flex-1 mt-md">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={priceHistory}>
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--teal)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="var(--text-faint)"
+                  tick={{ fill: 'var(--text-faint)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  domain={['auto', 'auto']}
+                  stroke="var(--text-faint)"
+                  tick={{ fill: 'var(--text-faint)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => `$${value}`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'rgba(10, 15, 26, 0.9)', 
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '12px',
+                    backdropFilter: 'blur(12px)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: '11px'
+                  }}
+                  itemStyle={{ color: 'var(--teal)' }}
+                  labelStyle={{ color: 'var(--text-faint)', marginBottom: '4px' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="price" 
+                  stroke="var(--teal)" 
+                  fillOpacity={1} 
+                  fill="url(#chartGradient)" 
+                  strokeWidth={2}
+                  animationDuration={1000}
+                />
+                <Scatter
+                  data={priceHistory.filter(point => point.position && point.entry_price)}
+                  dataKey="entry_price"
+                  shape={(props) => {
+                    const { cx, cy, payload } = props;
+                    const isLong = payload.position === 'LONG';
+                    return (
+                      <g transform={`translate(${cx-6},${cy-6})`}>
+                        <circle cx="6" cy="6" r="6" fill={isLong ? 'var(--teal)' : '#ef4444'} />
+                        <circle cx="6" cy="6" r="8" fill="none" stroke={isLong ? 'var(--teal)' : '#ef4444'} strokeOpacity="0.3" strokeWidth="2" />
+                      </g>
+                    );
+                  }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex gap-lg mt-md px-md pb-xs">
+            <div className="flex items-center gap-xs">
+              <div className="w-2 h-2 rounded-full bg-teal" />
+              <span className="font-mono text-[9px] text-faint uppercase tracking-wider">Long_Entry_Signals</span>
+            </div>
+            <div className="flex items-center gap-xs">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="font-mono text-[9px] text-faint uppercase tracking-wider">Short_Entry_Signals</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-lg">
+          <div className="terminal-box" data-title="ENGINE_CONFIGURATION">
+            <div className="flex flex-col gap-md py-sm">
+              <div>
+                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">TRADING_SYMBOL</label>
+                <input
+                  type="text"
+                  value={config.symbol}
+                  onChange={(e) => setConfig({ ...config, symbol: e.target.value.toUpperCase() })}
+                  className="glass-input font-mono text-sm"
+                  placeholder="E.G. BTCUSDT"
+                  disabled={status?.running}
+                />
+              </div>
+
+              <div>
+                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">TIMEFRAME_WINDOW</label>
+                <select
+                  value={config.timeframe}
+                  onChange={(e) => setConfig({ ...config, timeframe: e.target.value })}
+                  disabled={status?.running}
+                  className="glass-input font-mono text-sm"
+                  style={{ appearance: 'none', cursor: 'pointer' }}
+                >
+                  <option value="1m">01_MINUTE</option>
+                  <option value="5m">05_MINUTES</option>
+                  <option value="15m">15_MINUTES</option>
+                  <option value="1h">01_HOUR</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">RISK_ALLOCATION_PCT</label>
+                <div className="flex items-center gap-md">
+                  <input
+                    type="range"
+                    min="0.01"
+                    max="0.1"
+                    step="0.01"
+                    value={config.risk_pct}
+                    onChange={(e) => setConfig({ ...config, risk_pct: parseFloat(e.target.value) })}
+                    disabled={status?.running}
+                    className="flex-1 accent-teal"
+                  />
+                  <span className="font-mono text-xs text-teal w-12 text-right">{formatPercent(config.risk_pct)}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-md rounded-xl bg-white/5 border border-white/5">
+                <div>
+                  <div className="font-mono text-[10px] text-white font-bold uppercase">Simulation_Mode</div>
+                  <div className="font-mono text-[9px] text-faint uppercase">Execute without real capital</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={config.dry_run}
+                    onChange={(e) => setConfig({ ...config, dry_run: e.target.checked })}
+                    disabled={status?.running}
+                  />
+                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="terminal-box" data-title="SYSTEM_HEALTH">
+            <div className="flex flex-col gap-sm">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[10px] text-faint">CPU_USAGE</span>
+                <span className="font-mono text-[10px] text-teal">12.4%</span>
+              </div>
+              <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                <div className="bg-teal h-full" style={{ width: '12.4%' }} />
+              </div>
+              <div className="flex justify-between items-center mt-xs">
+                <span className="font-mono text-[10px] text-faint">MEMORY_STACK</span>
+                <span className="font-mono text-[10px] text-blue">256MB / 1GB</span>
+              </div>
+              <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                <div className="bg-blue h-full" style={{ width: '25%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Execution History Section */}
+      <section className="terminal-box" data-title="EXECUTION_LOG_MANIFEST">
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="custom-scrollbar">
           {trades.length > 0 ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Zeit</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Aktion</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Preis</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>PnL</th>
+                <tr className="font-mono text-[10px] text-faint uppercase">
+                  <th style={{ textAlign: 'left', padding: '12px 16px' }}>Timestamp_Ref</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px' }}>Action_Type</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px' }}>Execution_Px</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px' }}>Profit_Loss</th>
+                  <th style={{ textAlign: 'center', padding: '12px 16px' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {trades.slice(-10).reverse().map((trade, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                    <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                      {new Date(trade.timestamp).toLocaleString('de-DE')}
+                {trades.slice().reverse().map((trade, index) => (
+                  <tr key={index} className="hover:bg-white/5 transition-colors group">
+                    <td style={{ padding: '12px 16px' }} className="font-mono text-xs text-dim">
+                      {new Date(trade.timestamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' })}
                     </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{ 
-                        padding: '0.25rem 0.75rem', 
-                        borderRadius: '9999px', 
-                        fontSize: '0.75rem', 
-                        fontWeight: 600,
-                        background: trade.action === 'BUY' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: trade.action === 'BUY' ? 'var(--accent-success)' : 'var(--accent-danger)'
-                      }}>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span className={`badge ${trade.action === 'BUY' ? 'badge-teal' : 'badge-purple'}`}>
                         {trade.action}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
-                      ${trade.price?.toFixed(2)}
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }} className="font-mono text-xs font-bold">
+                      {formatCurrency(trade.price || 0)}
                     </td>
-                    <td style={{ 
-                      padding: '0.75rem', 
-                      fontSize: '0.875rem', 
-                      fontWeight: 600,
-                      textAlign: 'right',
-                      color: trade.pnl > 0 ? 'var(--accent-success)' : 'var(--accent-danger)'
-                    }}>
-                      {trade.pnl ? formatCurrency(trade.pnl) : '--'}
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }} className={`font-mono text-xs font-bold ${trade.pnl > 0 ? 'text-teal' : trade.pnl < 0 ? 'text-red-400' : 'text-dim'}`}>
+                      {trade.pnl !== undefined ? (trade.pnl > 0 ? '+' : '') + formatCurrency(trade.pnl) : '--'}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <CheckCircle size={14} className="text-teal opacity-50 group-hover:opacity-100 transition-opacity" />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-secondary" style={{ padding: '2rem', textAlign: 'center' }}>
-              Keine Trades vorhanden
-            </p>
+            <div className="flex flex-col items-center justify-center py-20 text-faint">
+              <Zap size={32} className="mb-md opacity-20" />
+              <p className="font-mono text-xs tracking-widest">AWAITING_FIRST_EXECUTION_SEQUENCE</p>
+            </div>
           )}
         </div>
-      </div>
+      </section>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(125,211,192,0.2); }
+      `}} />
     </div>
   );
 };

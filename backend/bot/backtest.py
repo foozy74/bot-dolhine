@@ -443,26 +443,33 @@ class AdvancedBacktester:
         total_fees = sum(t.fees for t in self.trades)
         total_slippage = sum(t.slippage * t.size for t in self.trades)
         
+        # Helper function to handle NaN/Inf values
+        def safe_value(val, default=0.0):
+            import math
+            if val is None or (isinstance(val, float) and (math.isnan(val) or math.isinf(val))):
+                return default
+            return val
+        
         return {
-            'total_return': total_return,
-            'total_return_pct': f"{total_return:.2f}%",
-            'win_rate': win_rate,
-            'win_rate_pct': f"{win_rate:.2f}%",
-            'profit_factor': profit_factor,
-            'max_drawdown': max_drawdown,
-            'max_drawdown_pct': f"{max_drawdown:.2f}%",
-            'sharpe_ratio': sharpe_ratio,
-            'total_trades': total_trades,
-            'winning_trades': len(winning_trades),
-            'losing_trades': len(losing_trades),
-            'avg_win': avg_win,
-            'avg_loss': avg_loss,
-            'avg_win_loss_ratio': avg_win_loss_ratio,
-            'avg_trade_duration_min': avg_trade_duration,
-            'total_fees': total_fees,
-            'total_slippage': total_slippage,
-            'final_capital': self.capital,
-            'initial_capital': self.config.initial_capital
+            'total_return': safe_value(total_return, 0.0),
+            'total_return_pct': f"{safe_value(total_return, 0.0):.2f}%",
+            'win_rate': safe_value(win_rate, 0.0),
+            'win_rate_pct': f"{safe_value(win_rate, 0.0):.2f}%",
+            'profit_factor': safe_value(profit_factor, 0.0),
+            'max_drawdown': safe_value(max_drawdown, 0.0),
+            'max_drawdown_pct': f"{safe_value(max_drawdown, 0.0):.2f}%",
+            'sharpe_ratio': safe_value(sharpe_ratio, 0.0),
+            'total_trades': safe_value(total_trades, 0),
+            'winning_trades': safe_value(len(winning_trades), 0),
+            'losing_trades': safe_value(len(losing_trades), 0),
+            'avg_win': safe_value(avg_win, 0.0),
+            'avg_loss': safe_value(avg_loss, 0.0),
+            'avg_win_loss_ratio': safe_value(avg_win_loss_ratio, 0.0),
+            'avg_trade_duration_min': safe_value(avg_trade_duration, 0.0),
+            'total_fees': safe_value(total_fees, 0.0),
+            'total_slippage': safe_value(total_slippage, 0.0),
+            'final_capital': safe_value(self.capital, self.config.initial_capital),
+            'initial_capital': safe_value(self.config.initial_capital, 10000.0)
         }
     
     def _print_results(self, metrics: Dict):

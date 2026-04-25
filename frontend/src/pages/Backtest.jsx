@@ -11,7 +11,10 @@ import {
   Loader2,
   BarChart3,
   PieChart,
-  Calendar
+  Calendar,
+  Cpu,
+  Database,
+  ArrowRight
 } from 'lucide-react';
 import {
   LineChart,
@@ -55,7 +58,7 @@ const Backtest = () => {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.detail || 'Backtest fehlgeschlagen');
+        throw new Error(data.detail || 'BACKTEST_EXECUTION_FAILURE');
       }
       
       setResult(data);
@@ -67,14 +70,15 @@ const Backtest = () => {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
   const formatPercent = (value) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'percent',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -82,88 +86,104 @@ const Backtest = () => {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>📊 Backtest</h1>
-        <p className="text-secondary">
-          Teste die Trading-Strategie mit historischen Daten
-        </p>
-      </div>
+    <div className="flex flex-col gap-xl animate-fade-in">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight mb-xs uppercase">STRATEGY_BACKTEST_ENGINE</h2>
+          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
+            <span className="flex items-center gap-xs">
+              <span className="w-2 h-2 rounded-full bg-blue" />
+              HISTORICAL_MODE_ENABLED
+            </span>
+            <span>•</span>
+            <span className="text-teal">DATA_SOURCE: BINANCE_SPOT</span>
+          </div>
+        </div>
 
-      {/* Konfiguration */}
-      <div className="glass-card" style={{ marginBottom: '2rem' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>⚙️ Konfiguration</h3>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Trading Paar
-            </label>
+        <div className="flex items-center gap-sm">
+          <button
+            onClick={handleRunBacktest}
+            disabled={isRunning}
+            className="btn btn-primary"
+            style={{ minWidth: '200px' }}
+          >
+            {isRunning ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                SIMULATING...
+              </>
+            ) : (
+              <>
+                <Play size={18} />
+                EXECUTE_SIMULATION
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+
+      {/* Configuration Grid */}
+      <div className="terminal-box" data-title="SIMULATION_PARAMETERS">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-md py-md">
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">ASSET_IDENTIFIER</label>
             <input
               type="text"
               value={config.symbol}
               onChange={(e) => setConfig({ ...config, symbol: e.target.value.toUpperCase() })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               placeholder="BTCUSDT"
               disabled={isRunning}
             />
           </div>
 
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Timeframe
-            </label>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">INTERVAL</label>
             <select
               value={config.timeframe}
               onChange={(e) => setConfig({ ...config, timeframe: e.target.value })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               disabled={isRunning}
             >
-              <option value="5m">5 Minuten</option>
-              <option value="15m">15 Minuten</option>
-              <option value="1h">1 Stunde</option>
-              <option value="4h">4 Stunden</option>
+              <option value="5m">5_MINUTES</option>
+              <option value="15m">15_MINUTES</option>
+              <option value="1h">1_HOUR</option>
+              <option value="4h">4_HOURS</option>
             </select>
           </div>
 
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Zeitraum
-            </label>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">LOOKBACK_WINDOW</label>
             <select
               value={config.days}
               onChange={(e) => setConfig({ ...config, days: parseInt(e.target.value) })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               disabled={isRunning}
             >
-              <option value={7}>7 Tage</option>
-              <option value={30}>30 Tage</option>
-              <option value={90}>90 Tage</option>
+              <option value={7}>07_DAYS</option>
+              <option value={30}>30_DAYS</option>
+              <option value={90}>90_DAYS</option>
             </select>
           </div>
 
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Startkapital ($)
-            </label>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">INITIAL_EQUITY</label>
             <input
               type="number"
               value={config.initial_capital}
               onChange={(e) => setConfig({ ...config, initial_capital: parseFloat(e.target.value) })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               disabled={isRunning}
             />
           </div>
 
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Risiko pro Trade (%)
-            </label>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">RISK_PER_UNIT</label>
             <input
               type="number"
               value={config.risk_per_trade * 100}
               onChange={(e) => setConfig({ ...config, risk_per_trade: parseFloat(e.target.value) / 100 })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               step="0.5"
               min="0.5"
               max="5"
@@ -171,15 +191,13 @@ const Backtest = () => {
             />
           </div>
 
-          <div>
-            <label className="text-secondary" style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.5rem' }}>
-              Hebel
-            </label>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono text-[10px] text-faint uppercase px-xs">MARGIN_LEVERAGE</label>
             <input
               type="number"
               value={config.leverage}
               onChange={(e) => setConfig({ ...config, leverage: parseFloat(e.target.value) })}
-              className="glass-input"
+              className="glass-input font-mono text-sm"
               min="1"
               max="10"
               disabled={isRunning}
@@ -187,224 +205,135 @@ const Backtest = () => {
           </div>
         </div>
 
-        <button
-          onClick={handleRunBacktest}
-          disabled={isRunning}
-          className="glass-button primary"
-          style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }}
-        >
-          {isRunning ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              Backtest läuft...
-            </>
-          ) : (
-            <>
-              <Play size={18} />
-              Backtest starten
-            </>
-          )}
-        </button>
-
         {error && (
-          <div 
-            style={{ 
-              marginTop: '1rem', 
-              padding: '1rem', 
-              background: 'rgba(239, 68, 68, 0.1)', 
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--accent-danger)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: 'var(--accent-danger)'
-            }}
-          >
-            <AlertCircle size={20} />
-            <span>{error}</span>
+          <div className="mt-md p-md rounded-2xl bg-red-400/5 border border-red-400/20 flex items-center gap-md">
+            <AlertCircle size={20} className="text-red-400 shrink-0" />
+            <span className="font-mono text-xs text-red-400 uppercase tracking-tighter">ERROR: {error}</span>
           </div>
         )}
       </div>
 
-      {/* Ergebnisse */}
       {result && (
         <>
-          {/* Metriken */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <DollarSign size={20} style={{ color: result.metrics.total_return > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }} />
-                <span className="text-secondary">Total Return</span>
+          {/* Performance Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-md">
+            {[
+              { label: 'TOTAL_RETURN', val: formatPercent(result.metrics.total_return), icon: DollarSign, color: result.metrics.total_return > 0 ? 'text-teal' : 'text-red-400' },
+              { label: 'MAX_DRAWDOWN', val: formatPercent(result.metrics.max_drawdown), icon: TrendingDown, color: 'text-red-400' },
+              { label: 'WIN_RATE', val: formatPercent(result.metrics.win_rate), icon: CheckCircle, color: 'text-blue' },
+              { label: 'PROFIT_FACTOR', val: result.metrics.profit_factor.toFixed(2), icon: BarChart3, color: 'text-purple' },
+              { label: 'SHARPE_RATIO', val: result.metrics.sharpe_ratio.toFixed(2), icon: Activity, color: 'text-teal' },
+              { label: 'TOTAL_TRADES', val: result.metrics.total_trades, icon: Database, color: 'text-blue' }
+            ].map((m, i) => (
+              <div key={i} className="terminal-box group hover:border-white/20 transition-all duration-300" style={{ padding: '16px' }}>
+                <div className="flex items-center justify-between mb-sm">
+                  <span className="font-mono text-[9px] text-faint uppercase tracking-widest">{m.label}</span>
+                  <m.icon size={14} className={`${m.color} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                </div>
+                <div className={`text-2xl font-bold tracking-tight ${m.color}`}>{m.val}</div>
               </div>
-              <p style={{ 
-                fontSize: '1.75rem', 
-                fontWeight: 600,
-                color: result.metrics.total_return > 0 ? 'var(--accent-success)' : 'var(--accent-danger)'
-              }}>
-                {formatPercent(result.metrics.total_return)}
-              </p>
-            </div>
-
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <TrendingDown size={20} style={{ color: 'var(--accent-danger)' }} />
-                <span className="text-secondary">Max Drawdown</span>
-              </div>
-              <p style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--accent-danger)' }}>
-                {formatPercent(result.metrics.max_drawdown)}
-              </p>
-            </div>
-
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <CheckCircle size={20} style={{ color: 'var(--accent-primary)' }} />
-                <span className="text-secondary">Win Rate</span>
-              </div>
-              <p style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-                {formatPercent(result.metrics.win_rate)}
-              </p>
-            </div>
-
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <BarChart3 size={20} style={{ color: 'var(--accent-primary)' }} />
-                <span className="text-secondary">Profit Factor</span>
-              </div>
-              <p style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-                {result.metrics.profit_factor.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Activity size={20} style={{ color: 'var(--accent-primary)' }} />
-                <span className="text-secondary">Sharpe Ratio</span>
-              </div>
-              <p style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-                {result.metrics.sharpe_ratio.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="glass-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
-                <span className="text-secondary">Trades</span>
-              </div>
-              <p style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-                {result.metrics.total_trades}
-              </p>
-            </div>
+            ))}
           </div>
 
-          {/* Equity Curve */}
-          <div className="glass-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>📈 Equity Curve</h3>
-            <div style={{ height: '300px' }}>
+          {/* Visualization Section */}
+          <div className="terminal-box" data-title="EQUITY_PERFORMANCE_CURVE">
+            <div className="h-[400px] w-full py-md">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={result.equity_curve}>
+                <AreaChart data={result.equity_curve} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent-success)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="var(--accent-success)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="var(--teal)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-glass)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis 
                     dataKey="timestamp" 
-                    stroke="var(--text-secondary)"
-                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                    stroke="rgba(255,255,255,0.2)"
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis 
-                    stroke="var(--text-secondary)"
-                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`}
+                    stroke="rgba(255,255,255,0.2)"
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                    tickFormatter={(value) => `$${(value/1000).toFixed(0)}K`}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      background: 'var(--bg-secondary)', 
-                      border: '1px solid var(--border-glass)',
-                      borderRadius: 'var(--radius-md)'
+                      background: 'rgba(15, 23, 42, 0.95)', 
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '16px',
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)',
+                      fontFamily: 'JetBrains Mono',
+                      fontSize: '11px'
                     }}
-                    labelStyle={{ color: 'var(--text-primary)' }}
-                    formatter={(value) => formatCurrency(value)}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString('de-DE')}
+                    labelStyle={{ color: 'var(--blue)', marginBottom: '8px', fontWeight: 'bold' }}
+                    itemStyle={{ color: 'var(--teal)' }}
+                    formatter={(value) => [formatCurrency(value), 'EQUITY_VAL']}
+                    labelFormatter={(label) => `SIM_TIME: ${new Date(label).toLocaleString()}`}
                   />
                   <Area 
                     type="monotone" 
                     dataKey="equity" 
-                    stroke="var(--accent-success)" 
+                    stroke="var(--teal)" 
                     fillOpacity={1} 
                     fill="url(#equityGradient)" 
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    animationDuration={1500}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Trade Tabelle */}
-          <div className="glass-card">
-            <h3 style={{ marginBottom: '1.5rem' }}>📊 Letzte Trades</h3>
-            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 1 }}>
-                  <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Zeit</th>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Direction</th>
-                    <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Entry</th>
-                    <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Exit</th>
-                    <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>PnL</th>
-                    <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Exit</th>
+          {/* Trade Manifest Table */}
+          <div className="terminal-box" data-title="SIMULATED_TRADE_LEDGER">
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-xs">
+                <thead className="sticky top-0 bg-black/80 backdrop-blur-md z-10">
+                  <tr className="border-b border-white/5 text-faint uppercase">
+                    <th className="py-md px-md text-left font-bold tracking-wider">EXECUTION_TIME</th>
+                    <th className="py-md px-md text-left font-bold tracking-wider">DIRECTION</th>
+                    <th className="py-md px-md text-right font-bold tracking-wider">ENTRY_PRC</th>
+                    <th className="py-md px-md text-right font-bold tracking-wider">EXIT_PRC</th>
+                    <th className="py-md px-md text-right font-bold tracking-wider">PNL_DELTA</th>
+                    <th className="py-md px-md text-center font-bold tracking-wider">TRIGGER</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-white/5">
                   {result.trades.map((trade, index) => (
-                    <tr key={index} style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        {new Date(trade.entry_time).toLocaleDateString('de-DE', { 
+                    <tr key={index} className="group hover:bg-white/5 transition-colors">
+                      <td className="py-md px-md text-dim whitespace-nowrap">
+                        {new Date(trade.entry_time).toLocaleString('en-US', { 
                           month: 'short', 
-                          day: 'numeric',
+                          day: '2-digit',
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
                       </td>
-                      <td style={{ padding: '0.75rem' }}>
-                        <span style={{ 
-                          padding: '0.25rem 0.75rem', 
-                          borderRadius: '9999px', 
-                          fontSize: '0.75rem', 
-                          fontWeight: 600,
-                          background: trade.direction === 'LONG' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: trade.direction === 'LONG' ? 'var(--accent-success)' : 'var(--accent-danger)'
-                        }}>
+                      <td className="py-md px-md">
+                        <span className={`
+                          px-sm py-xs rounded-lg text-[9px] font-bold tracking-widest
+                          ${trade.direction === 'LONG' ? 'bg-teal/10 text-teal' : 'bg-red-400/10 text-red-400'}
+                        `}>
                           {trade.direction}
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
-                        ${trade.entry_price.toFixed(2)}
+                      <td className="py-md px-md text-right text-dim">${trade.entry_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="py-md px-md text-right text-dim">${trade.exit_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '-'}</td>
+                      <td className={`py-md px-md text-right font-bold ${trade.pnl > 0 ? 'text-teal' : 'text-red-400'}`}>
+                        {trade.pnl > 0 ? '+' : ''}{formatCurrency(trade.pnl)}
                       </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
-                        ${trade.exit_price?.toFixed(2) || '-'}
-                      </td>
-                      <td style={{ 
-                        padding: '0.75rem', 
-                        fontSize: '0.875rem', 
-                        fontWeight: 600,
-                        textAlign: 'right',
-                        color: trade.pnl > 0 ? 'var(--accent-success)' : 'var(--accent-danger)'
-                      }}>
-                        {formatCurrency(trade.pnl)}
-                      </td>
-                      <td style={{ padding: '0.75rem' }}>
-                        <span style={{ 
-                          padding: '0.25rem 0.75rem', 
-                          borderRadius: '4px', 
-                          fontSize: '0.75rem', 
-                          fontWeight: 600,
-                          background: trade.exit_reason === 'TP' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: trade.exit_reason === 'TP' ? 'var(--accent-success)' : 'var(--accent-danger)'
-                        }}>
+                      <td className="py-md px-md text-center">
+                        <span className={`
+                          px-sm py-xs rounded-md text-[8px] font-bold border
+                          ${trade.exit_reason === 'TP' ? 'border-teal/20 text-teal bg-teal/5' : 'border-red-400/20 text-red-400 bg-red-400/5'}
+                        `}>
                           {trade.exit_reason}
                         </span>
                       </td>

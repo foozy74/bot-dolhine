@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { FileText, AlertCircle, Info, CheckCircle, Filter } from 'lucide-react';
+import { FileText, AlertCircle, Info, CheckCircle, Filter, Terminal, Clock, Activity, Trash2 } from 'lucide-react';
 
 const Logs = () => {
   const { logs, isConnected } = useWebSocket();
   const [filter, setFilter] = useState('all');
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const filteredLogs = logs.filter((log) => {
     if (filter === 'all') return true;
@@ -14,119 +21,139 @@ const Logs = () => {
   const getLogIcon = (level) => {
     switch (level) {
       case 'error':
-        return <AlertCircle size={16} style={{ color: 'var(--accent-danger)' }} />;
+        return <AlertCircle size={14} className="text-red-400" />;
       case 'warning':
-        return <AlertCircle size={16} style={{ color: 'var(--accent-warning)' }} />;
+        return <AlertCircle size={14} className="text-orange-400" />;
       case 'success':
-        return <CheckCircle size={16} style={{ color: 'var(--accent-success)' }} />;
+        return <CheckCircle size={14} className="text-teal" />;
       default:
-        return <Info size={16} style={{ color: 'var(--accent-info)' }} />;
+        return <Info size={14} className="text-blue" />;
     }
   };
 
   const getLogColor = (level) => {
     switch (level) {
       case 'error':
-        return 'var(--accent-danger)';
+        return 'text-red-400';
       case 'warning':
-        return 'var(--accent-warning)';
+        return 'text-orange-400';
       case 'success':
-        return 'var(--accent-success)';
+        return 'text-teal';
       default:
-        return 'var(--text-secondary)';
+        return 'text-dim';
     }
   };
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>📋 Logs</h1>
-        <p className="text-secondary">System-Logs und Ereignisse</p>
-      </div>
-
-      {/* Filter */}
-      <div className="glass-card" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Filter size={20} style={{ color: 'var(--text-secondary)' }} />
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {['all', 'info', 'success', 'warning', 'error'].map((level) => (
-            <button
-              key={level}
-              onClick={() => setFilter(level)}
-              className="glass-button"
-              style={{
-                background: filter === level ? 'var(--bg-glass)' : 'transparent',
-                borderColor: filter === level ? 'var(--border-glass)' : 'transparent',
-                textTransform: 'capitalize',
-              }}
-            >
-              {level === 'all' ? 'Alle' : level}
-            </button>
-          ))}
+    <div className="flex flex-col gap-xl">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight mb-xs uppercase">SYSTEM_RUNTIME_LOGS</h2>
+          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
+            <span className="flex items-center gap-xs">
+              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-teal shadow-[0_0_8px_rgba(125,211,192,0.5)]' : 'bg-red-400'}`} />
+              {isConnected ? 'WEBSOCKET_CONNECTED' : 'CONNECTION_LOST'}
+            </span>
+            <span>•</span>
+            <span className="text-blue">BUFFER_SIZE: {logs.length}</span>
+          </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div 
-            style={{ 
-              width: 8, 
-              height: 8, 
-              borderRadius: '50%', 
-              background: isConnected ? 'var(--accent-success)' : 'var(--accent-danger)' 
-            }} 
-          />
-          <span className="text-secondary" style={{ fontSize: '0.875rem' }}>
-            {isConnected ? 'Live' : 'Offline'}
-          </span>
-        </div>
-      </div>
 
-      {/* Logs List */}
-      <div className="glass-card" style={{ maxHeight: '600px', overflow: 'auto' }}>
-        {filteredLogs.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {filteredLogs.map((log, index) => (
-              <div
-                key={index}
+        <div className="flex items-center gap-sm">
+          <button className="btn btn-outline" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Trash2 size={16} />
+            CLEAR_BUFFER
+          </button>
+        </div>
+      </section>
+
+      {/* Filter and Status Controls */}
+      <div className="terminal-box" data-title="LOG_STREAMS" style={{ padding: '12px' }}>
+        <div className="flex flex-wrap items-center justify-between gap-md">
+          <div className="flex items-center gap-sm">
+            {['all', 'info', 'success', 'warning', 'error'].map((level) => (
+              <button
+                key={level}
+                onClick={() => setFilter(level)}
+                className={`
+                  px-md py-xs rounded-lg font-mono text-[10px] font-bold uppercase transition-all
+                  ${filter === level 
+                    ? 'bg-blue/20 text-blue border border-blue/30' 
+                    : 'text-faint hover:text-main hover:bg-white/5 border border-transparent'}
+                `}
                 style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.75rem',
-                  padding: '0.75rem',
-                  background: 'var(--bg-glass)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-glass)',
-                  animation: 'fadeIn 0.3s ease',
+                  background: filter === level ? 'rgba(91, 155, 213, 0.15)' : 'transparent',
+                  borderColor: filter === level ? 'rgba(91, 155, 213, 0.3)' : 'transparent',
+                  color: filter === level ? 'var(--blue)' : 'var(--text-faint)',
+                  cursor: 'pointer'
                 }}
               >
-                <div style={{ marginTop: '0.125rem' }}>
-                  {getLogIcon(log.level)}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ 
-                    color: getLogColor(log.level),
-                    fontSize: '0.875rem',
-                    lineHeight: 1.5
-                  }}>
-                    {log.message}
-                  </p>
-                  <p style={{ 
-                    color: 'var(--text-muted)', 
-                    fontSize: '0.75rem',
-                    marginTop: '0.25rem'
-                  }}>
-                    {new Date().toLocaleString('de-DE')}
-                  </p>
-                </div>
-              </div>
+                {level === 'all' ? 'STREAM_ALL' : `LVL_${level.toUpperCase()}`}
+              </button>
             ))}
           </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-            <FileText size={64} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-            <p>Keine Logs verfügbar</p>
-            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              Logs werden hier angezeigt, sobald der Bot läuft
-            </p>
+
+          <div className="flex items-center gap-md px-md">
+            <div className="flex items-center gap-xs text-faint font-mono text-[10px]">
+              <Clock size={12} />
+              SYNC_DELAY: 14MS
+            </div>
+            <div className="flex items-center gap-xs text-faint font-mono text-[10px]">
+              <Activity size={12} />
+              BPS: 124
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* Logs Console */}
+      <div 
+        className="terminal-box h-[650px] overflow-hidden flex flex-col" 
+        data-title="VIRTUAL_TERMINAL_01"
+      >
+        <div 
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-md font-mono text-xs custom-scrollbar"
+          style={{ background: 'rgba(0,0,0,0.2)' }}
+        >
+          {filteredLogs.length > 0 ? (
+            <div className="flex flex-col gap-xs">
+              {filteredLogs.map((log, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-md group hover:bg-white/5 py-1 px-2 rounded-md transition-colors"
+                >
+                  <span className="text-faint shrink-0 tabular-nums select-none opacity-40 group-hover:opacity-100 transition-opacity">
+                    [{new Date().toLocaleTimeString('de-DE', { hour12: false })}]
+                  </span>
+                  <div className="shrink-0 pt-1">
+                    {getLogIcon(log.level)}
+                  </div>
+                  <span className={`flex-1 break-words leading-relaxed ${getLogColor(log.level)}`}>
+                    <span className="font-bold opacity-70">[{log.level.toUpperCase()}]</span> {log.message}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center py-20 opacity-30 select-none">
+              <Terminal size={64} className="mb-md" />
+              <p className="font-mono text-xs uppercase tracking-widest">AWAITING_SYSTEM_BROADCAST...</p>
+              <p className="font-mono text-[10px] mt-xs uppercase">NO_ACTIVE_LOGS_IN_CURRENT_BUFFER</p>
+            </div>
+          )}
+        </div>
+
+        {/* Console Footer */}
+        <div className="px-md py-xs border-t border-white/5 bg-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-md text-[9px] font-mono text-faint uppercase">
+            <span>TTY: PTS/0</span>
+            <span>ENCODING: UTF-8</span>
+          </div>
+          <div className="flex items-center gap-xs text-[9px] font-mono text-faint uppercase">
+            <span>SCROLL_LOCK: OFF</span>
+          </div>
+        </div>
       </div>
     </div>
   );
