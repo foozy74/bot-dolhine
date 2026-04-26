@@ -14,6 +14,14 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     # Startup
     await init_db()
+    
+    # Initialize default settings
+    from core.database import async_session_maker
+    from services.settings_service import SettingsService
+    async with async_session_maker() as session:
+        service = SettingsService(session)
+        await service.initialize_defaults()
+        
     yield
     # Shutdown
 
