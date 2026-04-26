@@ -60,4 +60,4 @@ volumes:
 networks:
   tradehub-network:
     external: true
-    name: tradehub-shared
+    name: tradehub-network
