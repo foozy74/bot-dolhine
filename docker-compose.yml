@@ -1,9 +1,7 @@
 services:
   # ─── Backend ──────────────────────────────────────
   dolphin-bot:
-    build:
-      context: ./dolphin-bot/backend
-      dockerfile: Dockerfile
+    build: ./dolphin-bot/backend
     restart: unless-stopped
     environment:
       - APP_ENV=production
@@ -24,9 +22,7 @@ services:
 
   # ─── Frontend ─────────────────────────────────────
   dolphin-frontend:
-    build:
-      context: ./dolphin-bot/frontend
-      dockerfile: Dockerfile
+    build: ./dolphin-bot/frontend
     restart: unless-stopped
     depends_on:
       - dolphin-bot
@@ -35,9 +31,7 @@ services:
 
   # ─── Nginx (Reverse Proxy) ────────────────────────
   dolphin-nginx:
-    build:
-      context: ./dolphin-bot/nginx
-      dockerfile: Dockerfile
+    build: ./dolphin-bot/nginx
     restart: unless-stopped
     depends_on:
       - dolphin-bot
