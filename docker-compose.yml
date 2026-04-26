@@ -25,6 +25,14 @@ services:
       - dolphin-bot
     networks:
       - tradehub-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dolphin-frontend.rule=Host(`delfin.thesolution.at`)"
+      - "traefik.http.routers.dolphin-frontend.entrypoints=websecure"
+      - "traefik.http.routers.dolphin-frontend.tls=true"
+      - "traefik.http.routers.dolphin-frontend.middlewares=dolphin-auth"
+      - "traefik.http.middlewares.dolphin-auth.basicauth.users=owner:$apr1$y.Usukd9$mCpYYvB1OBHCfULMnn0/f."
+      - "traefik.http.services.dolphin-frontend.loadbalancer.server.port=3000"
 
 volumes:
   dolphin-data:
@@ -32,4 +40,3 @@ volumes:
 networks:
   tradehub-network:
     external: true
-    name: tradehub-shared
