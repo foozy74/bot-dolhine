@@ -1,10 +1,9 @@
 services:
-  # ─── Backend ──────────────────────────────────────
   dolphin-bot:
     build:
-      context: ./backend
+      context: ./dolphin-bot/backend
       dockerfile: Dockerfile
-    restart: unless-stopped
+    restart: always
     environment:
       - APP_ENV=production
       - DATABASE_URL=sqlite:////app/data/dolphin.db
@@ -16,43 +15,16 @@ services:
       - dolphin-data:/app/data
     networks:
       - tradehub-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # ─── Frontend ─────────────────────────────────────
   dolphin-frontend:
     build:
-      context: ./frontend
+      context: ./dolphin-bot/frontend
       dockerfile: Dockerfile
-    restart: unless-stopped
+    restart: always
     depends_on:
       - dolphin-bot
     networks:
       - tradehub-network
-
-  # ─── Nginx (Reverse Proxy) ────────────────────────
-  dolphin-nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      - BASIC_AUTH_USER=${BASIC_AUTH_USER}
-      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS}
-    depends_on:
-      - dolphin-bot
-      - dolphin-frontend
-    networks:
-      - tradehub-network
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
 volumes:
   dolphin-data:
@@ -60,4 +32,4 @@ volumes:
 networks:
   tradehub-network:
     external: true
-    name: tradehub-network
+    name: tradehub-shared
