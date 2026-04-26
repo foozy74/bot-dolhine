@@ -41,7 +41,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dolphin-router.rule=Host(`dolphin.thesolution.at`)"
-      - "traefik.http.routers.dolphin-router.entrypoints=websecure"
       - "traefik.http.routers.dolphin-router.tls=true"
       - "traefik.http.routers.dolphin-router.middlewares=dolphin-trading-auth"
       - "traefik.http.middlewares.dolphin-trading-auth.basicauth.users=owner:$$apr1$$y.Usukd9$$mCpYYvB1OBHCfULMnn0/f."
