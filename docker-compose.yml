@@ -40,7 +40,7 @@ services:
       - tradehub-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dolphin-router.rule=Host(`delfin.thesolution.at`)"
+      - "traefik.http.routers.dolphin-router.rule=Host(`dolphin.thesolution.at`)"
       - "traefik.http.routers.dolphin-router.entrypoints=websecure"
       - "traefik.http.routers.dolphin-router.tls=true"
       - "traefik.http.routers.dolphin-router.middlewares=dolphin-trading-auth"
