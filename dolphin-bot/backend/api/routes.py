@@ -2,11 +2,13 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from bot.bot_manager import BotManager
 from services.settings_service import SettingsService
+from services.notification_service import NotificationService
 from core.database import get_session
 import asyncio
 
 router      = APIRouter()
 bot_manager = BotManager()
+notification_service = NotificationService()
 clients: list[WebSocket] = []
 
 # ─── Models ──────────────────────────────────────────
@@ -43,6 +45,17 @@ async def start(config: BotConfig):
             secret_key_setting = await settings_service.get_setting('bitunix_secret_key', include_secrets=True)
             if secret_key_setting and secret_key_setting.get('value'):
                 config.secret_key = secret_key_setting['value']
+        
+        # Load Telegram settings
+        tel_token = await settings_service.get_setting('telegram_bot_token', include_secrets=True)
+        tel_chat  = await settings_service.get_setting('telegram_chat_id')
+        tel_enabled = await settings_service.get_setting('enable_telegram')
+        
+        if tel_token and tel_chat and tel_enabled:
+            notification_service.bot_token = tel_token['value']
+            notification_service.chat_id = tel_chat['value']
+            notification_service.enabled = tel_enabled['value']
+            notification_service.base_url = f"https://api.telegram.org/bot{notification_service.bot_token}"
     
     asyncio.create_task(bot_manager.start(config.dict(), broadcast))
     return {"message": "Bot gestartet ✅"}
@@ -69,6 +82,7 @@ async def websocket(ws: WebSocket):
         clients.remove(ws)
 
 async def broadcast(data: dict):
+    # 1. WebSocket Broadcast
     dead = []
     for c in clients:
         try:
@@ -77,6 +91,13 @@ async def broadcast(data: dict):
             dead.append(c)
     for c in dead:
         clients.remove(c)
+    
+    # 2. Telegram Broadcast (only for trades and important logs)
+    if "message" in data and notification_service.enabled:
+        msg_type = data.get("type", "")
+        # Filter: Send trades always, logs only if they are info/error and not too frequent
+        if msg_type == "trade" or (msg_type == "log" and data.get("level") in ["info", "error"]):
+            await notification_service.send_message(data["message"])
 
 
 # ─── Backtest Endpoints ───────────────────────────────────────
