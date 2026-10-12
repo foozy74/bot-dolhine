@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
 from api.settings import router as settings_router
+from api.hyperliquid import router as hyperliquid_router
 from core.config import get_settings
 from core.database import init_db
 from contextlib import asynccontextmanager
@@ -27,8 +28,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="🐬 Delfin Bot",
-    version="1.0.0",
-    description="Bitunix Trading Bot",
+    version="1.3.0",
+    description="Bitunix & Hyperliquid L1 Trading Bot",
     lifespan=lifespan
 )
 
@@ -42,6 +43,7 @@ app.add_middleware(
 # API Routes
 app.include_router(router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(hyperliquid_router, prefix="/api")
 
 # Note: Frontend wird von nginx geserved, nicht vom Backend
 # Backend dient nur API-Endpunkte unter /api/

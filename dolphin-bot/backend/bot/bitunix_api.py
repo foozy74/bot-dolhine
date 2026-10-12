@@ -1,7 +1,6 @@
 import requests
 import hashlib
 import time
-import pandas as pd
 import uuid
 from typing import Dict, Optional
 
@@ -119,34 +118,12 @@ class BitunixAPI:
             symbol: Trading pair (e.g., BTCUSDT)
             
         Returns:
-            Ticker data
+            Ticker data dict or None
         """
-        endpoint = "/api/v1/futures/market/ticker"
-        params = {"symbol": symbol}
-        
-        headers = self._headers("GET", params)
-        
-        try:
-            response = self.session.get(
-                self.base_url + endpoint,
-                params=params,
-                headers=headers
-            )
-            
-            data = response.json()
-            if response.status_code != 200:
-                print(f"[{response.status_code}] API Error: {response.text[:200]}")
-                return None
-            
-            if data.get("code") != 0:
-                print(f"[{data.get('code')}] API Error: {data.get('msg', 'Unknown error')}")
-                return None
-            
-            return data.get("data")
-            
-        except Exception as e:
-            print(f"[ERROR] Exception in get_ticker: {str(e)}")
-            return None
+        tickers = self.get_tickers(symbols=symbol)
+        if isinstance(tickers, list) and len(tickers) > 0:
+            return tickers[0]
+        return None
     
     def get_tickers(self, symbols: str = None):
         """
@@ -235,7 +212,7 @@ class BitunixAPI:
         Returns:
             Balance data
         """
-        endpoint = "/api/v1/futures/account/balance"
+        endpoint = "/api/v1/cp/asset/query"
         headers = self._headers("GET")
         
         try:
@@ -278,7 +255,7 @@ class BitunixAPI:
         if dry_run:
             return {"dry_run": True, "symbol": symbol, "side": side, "qty": qty, "type": order_type}
         
-        endpoint = "/api/v1/futures/order"
+        endpoint = "/api/v1/futures/trade/place_order"
         body_dict = {
             "symbol": symbol,
             "side": side.upper(),
@@ -366,10 +343,10 @@ class BitunixAPI:
         Returns:
             Positions data
         """
-        endpoint = "/api/v1/futures/account/positions"
+        endpoint = "/api/v1/futures/position/get_pending_positions"
         params = {}
         if symbol:
-            params["symbol"] = symbol
+            params["symbols"] = symbol
         
         headers = self._headers("GET", params)
         

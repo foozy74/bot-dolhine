@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSettings } from '../hooks/useSettings';
+import KPICard from '../components/common/KPICard';
+import StatusDot from '../components/common/StatusDot';
 import { 
-  LineChart, 
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  AreaChart,
   Area,
   Scatter,
   ComposedChart
@@ -17,17 +16,16 @@ import {
 import { 
   Play, 
   Square, 
-  RefreshCw, 
   TrendingUp, 
   TrendingDown,
   DollarSign,
   Activity,
   Clock,
-  AlertCircle,
   CheckCircle,
   Zap,
-  Cpu,
-  BarChart2
+  BarChart2,
+  Shield,
+  Layers
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -36,6 +34,7 @@ const Dashboard = () => {
   const [priceHistory, setPriceHistory] = useState([]);
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState(null);
   const [config, setConfig] = useState({
     api_key: '',
     secret_key: '',
@@ -98,7 +97,7 @@ const Dashboard = () => {
           return [...prev.slice(0, -1), newPoint];
         }
         
-        const newHistory = [...prev, newPoint].slice(-50);
+        const newHistory = [...prev, newPoint].slice(-60);
         return newHistory;
       });
     }
@@ -106,6 +105,7 @@ const Dashboard = () => {
 
   const handleStart = async () => {
     setIsStarting(true);
+    setFeedbackMsg(null);
     try {
       const configToSend = {
         api_key: '',
@@ -122,23 +122,33 @@ const Dashboard = () => {
         body: JSON.stringify(configToSend),
       });
       
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText);
+      }
+      setFeedbackMsg({ type: 'success', text: 'Algo Engine erfolgreich gestartet' });
     } catch (error) {
       console.error('Fehler beim Starten:', error);
+      setFeedbackMsg({ type: 'error', text: `Start fehlgeschlagen: ${error.message}` });
     } finally {
       setIsStarting(false);
+      setTimeout(() => setFeedbackMsg(null), 5000);
     }
   };
 
   const handleStop = async () => {
     setIsStopping(true);
+    setFeedbackMsg(null);
     try {
       const response = await fetch('/api/bot/stop', { method: 'POST' });
       if (!response.ok) throw new Error(await response.text());
+      setFeedbackMsg({ type: 'info', text: 'Algo Engine gestoppt' });
     } catch (error) {
       console.error('Fehler beim Stoppen:', error);
+      setFeedbackMsg({ type: 'error', text: `Stoppen fehlgeschlagen: ${error.message}` });
     } finally {
       setIsStopping(false);
+      setTimeout(() => setFeedbackMsg(null), 5000);
     }
   };
 
@@ -146,6 +156,8 @@ const Dashboard = () => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
     }).format(value);
   };
 
@@ -153,129 +165,176 @@ const Dashboard = () => {
     return `${(value * 100).toFixed(2)}%`;
   };
 
+  const lastUpdateTime = status?.last_update 
+    ? new Date(status.last_update).toLocaleTimeString('de-DE') 
+    : 'STANDBY';
+
   return (
-    <div className="flex flex-col gap-xl">
-      {/* Dashboard Header Section */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-xs">OPERATIONAL_DASHBOARD</h2>
-          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
-            <span className="flex items-center gap-xs">
-              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-teal' : 'bg-red-500'}`} />
-              WS_{isConnected ? 'CONNECTED' : 'DISCONNECTED'}
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-xs">
-              <span className={`w-2 h-2 rounded-full ${status?.running ? 'bg-teal' : 'bg-orange-500'}`} />
-              BOT_{status?.running ? 'EXECUTING' : 'STANDBY'}
-            </span>
-            <span>•</span>
-            <span className="text-teal">TRADING_SYST_V4.0</span>
+    <div className="flex flex-col gap-6 animate-fade-in">
+      {/* Dashboard Institutional Header */}
+      <section 
+        className="relative rounded-2xl p-5 backdrop-blur-md"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--glass-border)',
+        }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-teal">
+                Algo Control Center
+              </span>
+              <span className="text-white/20">•</span>
+              <StatusDot 
+                status={isConnected ? 'live' : 'error'} 
+                label={isConnected ? 'STREAM_ONLINE' : 'OFFLINE'} 
+              />
+              <span className="text-white/20">•</span>
+              <StatusDot 
+                status={status?.running ? 'live' : 'stale'} 
+                label={status?.running ? 'ENGINE_EXECUTING' : 'ENGINE_STANDBY'} 
+              />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white">
+              DELFIN <span className="gradient-text">TRADING TERMINAL</span>
+            </h2>
+            <p className="text-xs text-dim font-mono mt-1">
+              Bitunix Momentum & Volatility Engine · {config.symbol} ({config.timeframe})
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {!status?.running ? (
+              <button
+                onClick={handleStart}
+                disabled={isStarting}
+                className="btn btn-primary"
+                style={{ height: '42px', padding: '0 20px' }}
+              >
+                <Play size={15} fill="currentColor" />
+                {isStarting ? 'INITIALIZING...' : 'START_ENGINE'}
+              </button>
+            ) : (
+              <button
+                onClick={handleStop}
+                disabled={isStopping}
+                className="btn btn-outline"
+                style={{ borderColor: '#ef4444', color: '#ef4444', height: '42px', padding: '0 20px' }}
+              >
+                <Square size={15} fill="currentColor" />
+                {isStopping ? 'STOPPING...' : 'STOP_ENGINE'}
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-sm">
-          {!status?.running ? (
-            <button
-              onClick={handleStart}
-              disabled={isStarting}
-              className="btn btn-primary"
-            >
-              <Play size={16} fill="currentColor" />
-              {isStarting ? 'INITIALIZING...' : 'START_ENGINE'}
-            </button>
-          ) : (
-            <button
-              onClick={handleStop}
-              disabled={isStopping}
-              className="btn btn-outline"
-              style={{ borderColor: '#ef4444', color: '#ef4444' }}
-            >
-              <Square size={16} fill="currentColor" />
-              {isStopping ? 'TERMINATING...' : 'STOP_ENGINE'}
-            </button>
-          )}
-        </div>
+        {feedbackMsg && (
+          <div 
+            className="mt-3 p-3 rounded-lg font-mono text-xs flex items-center gap-2"
+            style={{
+              backgroundColor: feedbackMsg.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(125, 211, 192, 0.15)',
+              border: `1px solid ${feedbackMsg.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(125, 211, 192, 0.3)'}`,
+              color: feedbackMsg.type === 'error' ? '#ef4444' : 'var(--teal)',
+            }}
+          >
+            <CheckCircle size={14} />
+            {feedbackMsg.text}
+          </div>
+        )}
       </section>
 
-      {/* Main Grid: Stats & Real-time Info */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-        <div className="terminal-box" data-title="CURRENT_PRICE">
-          <div className="flex items-center justify-between mb-sm">
-            <DollarSign className="text-teal" size={20} />
-            <span className="font-mono text-[10px] text-faint">USDT_SPOT</span>
-          </div>
-          <div className="text-4xl font-bold font-display tracking-tight text-white mb-xs">
-            {status?.current_price ? formatCurrency(status.current_price) : '$0.00'}
-          </div>
-          <div className="font-mono text-[10px] text-faint flex items-center gap-xs">
-            <Clock size={12} />
-            UPDATED: {status?.last_update ? new Date(status.last_update).toLocaleTimeString('de-DE') : 'WAITING_FOR_DATA'}
-          </div>
-        </div>
+      {/* AutoFund-Style KPICards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+        <KPICard
+          label="MARKET_PRICE"
+          value={status?.current_price ? formatCurrency(status.current_price) : '$0.00'}
+          delta={status?.current_price ? `${config.symbol} SPOT` : undefined}
+          tone="neutral"
+          hint={`SYNC: ${lastUpdateTime}`}
+          icon={DollarSign}
+        />
 
-        <div className="terminal-box" data-title="ACTIVE_POSITION">
-          <div className="flex items-center justify-between mb-sm">
-            {status?.position === 'LONG' ? <TrendingUp className="text-teal" size={20} /> : 
-             status?.position === 'SHORT' ? <TrendingDown className="text-red-400" size={20} /> : 
-             <Activity className="text-faint" size={20} />}
-            <span className="font-mono text-[10px] text-faint">DELTA_EXPOSURE</span>
-          </div>
-          {status?.position ? (
-            <div className="flex flex-col">
-              <div className={`text-3xl font-bold font-display ${status.position === 'LONG' ? 'text-teal' : 'text-red-400'}`}>
-                {status.position}
-              </div>
-              <div className="grid grid-cols-2 gap-md mt-sm">
-                <div>
-                  <div className="font-mono text-[9px] text-faint uppercase">Entry_Px</div>
-                  <div className="font-mono text-xs font-bold">{formatCurrency(status.entry_price || 0)}</div>
-                </div>
-                <div>
-                  <div className="font-mono text-[9px] text-faint uppercase">PnL_Unrealized</div>
-                  <div className={`font-mono text-xs font-bold ${status.pnl >= 0 ? 'text-teal' : 'text-red-400'}`}>
-                    {formatPercent(status.pnl || 0)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="h-[70px] flex items-center justify-center border border-dashed border-white/5 rounded-lg text-faint font-mono text-[10px]">
-              NO_ACTIVE_MARKET_ORDERS
-            </div>
-          )}
-        </div>
+        <KPICard
+          label="ACTIVE_POSITION"
+          value={status?.position || 'FLAT'}
+          delta={
+            status?.position 
+              ? `ENTRY: ${formatCurrency(status.entry_price || 0)}` 
+              : 'KEINE OFFENE POSITION'
+          }
+          tone={
+            status?.position === 'LONG' ? 'positive' : 
+            status?.position === 'SHORT' ? 'negative' : 'neutral'
+          }
+          hint={
+            status?.position 
+              ? `UNREALIZED: ${formatPercent(status.pnl || 0)}` 
+              : 'WARTET AUF SIGNAL'
+          }
+          icon={
+            status?.position === 'LONG' ? TrendingUp : 
+            status?.position === 'SHORT' ? TrendingDown : Activity
+          }
+          badge={status?.position ? status.position : undefined}
+        />
 
-        <div className="terminal-box" data-title="STRATEGY_PERFORMANCE">
-          <div className="flex items-center justify-between mb-sm">
-            <BarChart2 className="text-blue" size={20} />
-            <span className="font-mono text-[10px] text-faint">SESSION_STATS</span>
-          </div>
-          <div className="flex flex-col">
-            <div className={`text-4xl font-bold font-display ${status?.total_pnl >= 0 ? 'text-teal' : 'text-red-400'}`}>
-              {status?.total_pnl !== undefined ? formatPercent(status.total_pnl) : '0.00%'}
-            </div>
-            <div className="flex items-center gap-sm mt-xs">
-              <div className="badge badge-blue">BOT_{status?.running ? 'ACTIVE' : 'IDLE'}</div>
-              <div className="badge badge-teal">{status?.dry_run ? 'SIM_MODE' : 'LIVE_EXEC'}</div>
-            </div>
-          </div>
-        </div>
+        <KPICard
+          label="TOTAL_PNL_PERFORMANCE"
+          value={status?.total_pnl !== undefined ? `${status.total_pnl > 0 ? '+' : ''}${status.total_pnl.toFixed(2)}%` : '0.00%'}
+          delta={`${trades.length} EXECUTIONS`}
+          tone={status?.total_pnl > 0 ? 'positive' : status?.total_pnl < 0 ? 'negative' : 'neutral'}
+          hint={config.dry_run ? 'SIMULATION_MODE' : 'LIVE_CAPITAL'}
+          icon={BarChart2}
+          badge={config.dry_run ? 'PAPER' : 'LIVE'}
+        />
+
+        <KPICard
+          label="RISK_GATE_STATUS"
+          value={formatPercent(config.risk_pct)}
+          delta={`${config.timeframe} KERZEN INTERVALL`}
+          tone="neutral"
+          hint="DRAWDOWN GUARD AKTIV"
+          icon={Shield}
+          badge="GUARD"
+        />
       </div>
 
-      {/* Chart & Control Panel Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }} className="flex-col lg:grid">
-        <div className="terminal-box" data-title="REALTIME_MARKET_FLOW" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
-          <div className="flex-1 mt-md">
+      {/* Main Grid: Chart & Engine Controls */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+        {/* Real-time Recharts Market Chart */}
+        <div 
+          className="terminal-box" 
+          data-title="REALTIME_MARKET_STREAM" 
+          style={{ minHeight: '440px', display: 'flex', flexDirection: 'column' }}
+        >
+          <div className="flex items-center justify-between mt-3 mb-2 px-1">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-white font-bold">{config.symbol}</span>
+              <span className="badge badge-teal" style={{ fontSize: '9px' }}>{config.timeframe}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--teal)' }} />
+                <span className="font-mono text-[9px] text-faint">LONG_ENTRY</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                <span className="font-mono text-[9px] text-faint">SHORT_ENTRY</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minHeight: '340px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={priceHistory}>
+              <ComposedChart data={priceHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="var(--teal)" stopOpacity={0}/>
+                  <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--teal)" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="var(--teal)" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis 
                   dataKey="time" 
                   stroke="var(--text-faint)"
@@ -289,16 +348,17 @@ const Dashboard = () => {
                   tick={{ fill: 'var(--text-faint)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(val) => `$${val}`}
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    background: 'rgba(10, 15, 26, 0.9)', 
+                    background: 'rgba(15, 22, 37, 0.95)', 
                     border: '1px solid var(--glass-border)',
-                    borderRadius: '12px',
-                    backdropFilter: 'blur(12px)',
+                    borderRadius: '10px',
+                    backdropFilter: 'blur(16px)',
                     fontFamily: 'JetBrains Mono',
-                    fontSize: '11px'
+                    fontSize: '11px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                   }}
                   itemStyle={{ color: 'var(--teal)' }}
                   labelStyle={{ color: 'var(--text-faint)', marginBottom: '4px' }}
@@ -308,9 +368,9 @@ const Dashboard = () => {
                   dataKey="price" 
                   stroke="var(--teal)" 
                   fillOpacity={1} 
-                  fill="url(#chartGradient)" 
+                  fill="url(#marketGradient)" 
                   strokeWidth={2}
-                  animationDuration={1000}
+                  isAnimationActive={false}
                 />
                 <Scatter
                   data={priceHistory.filter(point => point.position && point.entry_price)}
@@ -321,7 +381,7 @@ const Dashboard = () => {
                     return (
                       <g transform={`translate(${cx-6},${cy-6})`}>
                         <circle cx="6" cy="6" r="6" fill={isLong ? 'var(--teal)' : '#ef4444'} />
-                        <circle cx="6" cy="6" r="8" fill="none" stroke={isLong ? 'var(--teal)' : '#ef4444'} strokeOpacity="0.3" strokeWidth="2" />
+                        <circle cx="6" cy="6" r="8" fill="none" stroke={isLong ? 'var(--teal)' : '#ef4444'} strokeOpacity="0.4" strokeWidth="2" />
                       </g>
                     );
                   }}
@@ -329,70 +389,80 @@ const Dashboard = () => {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex gap-lg mt-md px-md pb-xs">
-            <div className="flex items-center gap-xs">
-              <div className="w-2 h-2 rounded-full bg-teal" />
-              <span className="font-mono text-[9px] text-faint uppercase tracking-wider">Long_Entry_Signals</span>
-            </div>
-            <div className="flex items-center gap-xs">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="font-mono text-[9px] text-faint uppercase tracking-wider">Short_Entry_Signals</span>
-            </div>
-          </div>
         </div>
 
-        <div className="flex flex-col gap-lg">
-          <div className="terminal-box" data-title="ENGINE_CONFIGURATION">
-            <div className="flex flex-col gap-md py-sm">
+        {/* Engine Parameters & System Health */}
+        <div className="flex flex-col gap-4">
+          <div className="terminal-box" data-title="ENGINE_PARAMETERS">
+            <div className="flex flex-col gap-4 pt-3">
               <div>
-                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">TRADING_SYMBOL</label>
+                <label className="font-mono text-[10px] text-faint uppercase block mb-1.5">
+                  HANDELSPAAR (SYMBOL)
+                </label>
                 <input
                   type="text"
                   value={config.symbol}
                   onChange={(e) => setConfig({ ...config, symbol: e.target.value.toUpperCase() })}
-                  className="glass-input font-mono text-sm"
-                  placeholder="E.G. BTCUSDT"
+                  className="glass-input font-mono"
+                  placeholder="Z.B. BTCUSDT"
                   disabled={status?.running}
                 />
               </div>
 
               <div>
-                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">TIMEFRAME_WINDOW</label>
+                <label className="font-mono text-[10px] text-faint uppercase block mb-1.5">
+                  ZEITFENSTER (TIMEFRAME)
+                </label>
                 <select
                   value={config.timeframe}
                   onChange={(e) => setConfig({ ...config, timeframe: e.target.value })}
                   disabled={status?.running}
-                  className="glass-input font-mono text-sm"
-                  style={{ appearance: 'none', cursor: 'pointer' }}
+                  className="glass-input font-mono"
+                  style={{ cursor: 'pointer' }}
                 >
-                  <option value="1m">01_MINUTE</option>
-                  <option value="5m">05_MINUTES</option>
-                  <option value="15m">15_MINUTES</option>
-                  <option value="1h">01_HOUR</option>
+                  <option value="1m">1 MINUTE (1M)</option>
+                  <option value="5m">5 MINUTEN (5M)</option>
+                  <option value="15m">15 MINUTEN (15M)</option>
+                  <option value="1h">1 STUNDE (1H)</option>
                 </select>
               </div>
 
               <div>
-                <label className="font-mono text-[10px] text-faint uppercase block mb-xs">RISK_ALLOCATION_PCT</label>
-                <div className="flex items-center gap-md">
-                  <input
-                    type="range"
-                    min="0.01"
-                    max="0.1"
-                    step="0.01"
-                    value={config.risk_pct}
-                    onChange={(e) => setConfig({ ...config, risk_pct: parseFloat(e.target.value) })}
-                    disabled={status?.running}
-                    className="flex-1 accent-teal"
-                  />
-                  <span className="font-mono text-xs text-teal w-12 text-right">{formatPercent(config.risk_pct)}</span>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="font-mono text-[10px] text-faint uppercase">
+                    RISIKO-ALLOKATION PRO TRADE
+                  </label>
+                  <span className="font-mono text-xs text-teal font-bold">
+                    {formatPercent(config.risk_pct)}
+                  </span>
                 </div>
+                <input
+                  type="range"
+                  min="0.01"
+                  max="0.1"
+                  step="0.01"
+                  value={config.risk_pct}
+                  onChange={(e) => setConfig({ ...config, risk_pct: parseFloat(e.target.value) })}
+                  disabled={status?.running}
+                  className="w-full accent-teal cursor-pointer"
+                />
               </div>
 
-              <div className="flex items-center justify-between p-md rounded-xl bg-white/5 border border-white/5">
+              {/* Simulation Mode Switch */}
+              <div 
+                className="flex items-center justify-between p-3 rounded-xl mt-1"
+                style={{
+                  backgroundColor: 'var(--surface-muted)',
+                  border: '1px solid var(--glass-border)',
+                }}
+              >
                 <div>
-                  <div className="font-mono text-[10px] text-white font-bold uppercase">Simulation_Mode</div>
-                  <div className="font-mono text-[9px] text-faint uppercase">Execute without real capital</div>
+                  <div className="font-mono text-[11px] text-white font-bold uppercase">
+                    SIMULATION / DRY RUN
+                  </div>
+                  <div className="font-mono text-[9px] text-faint">
+                    Trades ohne echtes Kapital ausführen
+                  </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -402,86 +472,89 @@ const Dashboard = () => {
                     onChange={(e) => setConfig({ ...config, dry_run: e.target.checked })}
                     disabled={status?.running}
                   />
-                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
+                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
                 </label>
               </div>
             </div>
           </div>
 
-          <div className="terminal-box" data-title="SYSTEM_HEALTH">
-            <div className="flex flex-col gap-sm">
+          <div className="terminal-box" data-title="SYSTEM_DIAGNOSTICS">
+            <div className="flex flex-col gap-3 pt-2">
               <div className="flex justify-between items-center">
-                <span className="font-mono text-[10px] text-faint">CPU_USAGE</span>
-                <span className="font-mono text-[10px] text-teal">12.4%</span>
+                <span className="font-mono text-[10px] text-faint">WEBSOCKET_STREAM</span>
+                <span className={`font-mono text-[10px] font-bold ${isConnected ? 'text-teal' : 'text-red-400'}`}>
+                  {isConnected ? '100% OPERATIONAL' : 'DISCONNECTED'}
+                </span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                <div className="bg-teal h-full" style={{ width: '12.4%' }} />
+              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                <div className={`h-full ${isConnected ? 'bg-teal' : 'bg-red-400'}`} style={{ width: isConnected ? '100%' : '0%' }} />
               </div>
-              <div className="flex justify-between items-center mt-xs">
-                <span className="font-mono text-[10px] text-faint">MEMORY_STACK</span>
-                <span className="font-mono text-[10px] text-blue">256MB / 1GB</span>
+
+              <div className="flex justify-between items-center mt-1">
+                <span className="font-mono text-[10px] text-faint">ENGINE_STATUS</span>
+                <span className="font-mono text-[10px] text-blue font-bold">
+                  {status?.running ? 'ACTIVE_LOOP' : 'IDLE'}
+                </span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                <div className="bg-blue h-full" style={{ width: '25%' }} />
+              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue h-full" style={{ width: status?.running ? '100%' : '20%' }} />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Execution History Section */}
-      <section className="terminal-box" data-title="EXECUTION_LOG_MANIFEST">
-        <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="custom-scrollbar">
+      {/* Execution Log Table Section */}
+      <section className="terminal-box" data-title="TRADE_EXECUTION_MANIFEST">
+        <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
           {trades.length > 0 ? (
-            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
               <thead>
                 <tr className="font-mono text-[10px] text-faint uppercase">
-                  <th style={{ textAlign: 'left', padding: '12px 16px' }}>Timestamp_Ref</th>
-                  <th style={{ textAlign: 'left', padding: '12px 16px' }}>Action_Type</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px' }}>Execution_Px</th>
-                  <th style={{ textAlign: 'right', padding: '12px 16px' }}>Profit_Loss</th>
-                  <th style={{ textAlign: 'center', padding: '12px 16px' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '10px 14px' }}>ZEITPUNKT</th>
+                  <th style={{ textAlign: 'left', padding: '10px 14px' }}>AKTION</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px' }}>KURS (PRICE)</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px' }}>GEWINN/VERLUST</th>
+                  <th style={{ textAlign: 'center', padding: '10px 14px' }}>VERIFIKATION</th>
                 </tr>
               </thead>
               <tbody>
                 {trades.slice().reverse().map((trade, index) => (
-                  <tr key={index} className="hover:bg-white/5 transition-colors group">
-                    <td style={{ padding: '12px 16px' }} className="font-mono text-xs text-dim">
-                      {new Date(trade.timestamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' })}
+                  <tr 
+                    key={index} 
+                    className="hover:bg-white/5 transition-colors"
+                    style={{ backgroundColor: 'rgba(20, 28, 46, 0.4)' }}
+                  >
+                    <td style={{ padding: '10px 14px' }} className="font-mono text-xs text-dim">
+                      {new Date(trade.timestamp || trade.time).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' })}
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span className={`badge ${trade.action === 'BUY' ? 'badge-teal' : 'badge-purple'}`}>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span className={`badge ${trade.action?.includes('BUY') || trade.action?.includes('LONG') ? 'badge-teal' : 'badge-purple'}`}>
                         {trade.action}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }} className="font-mono text-xs font-bold">
+                    <td style={{ padding: '10px 14px', textAlign: 'right' }} className="font-mono text-xs font-bold text-white">
                       {formatCurrency(trade.price || 0)}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }} className={`font-mono text-xs font-bold ${trade.pnl > 0 ? 'text-teal' : trade.pnl < 0 ? 'text-red-400' : 'text-dim'}`}>
-                      {trade.pnl !== undefined ? (trade.pnl > 0 ? '+' : '') + formatCurrency(trade.pnl) : '--'}
+                    <td style={{ padding: '10px 14px', textAlign: 'right' }} className={`font-mono text-xs font-bold ${trade.pnl > 0 ? 'text-teal' : trade.pnl < 0 ? 'text-red-400' : 'text-dim'}`}>
+                      {trade.pnl !== undefined ? (trade.pnl > 0 ? '+' : '') + `${trade.pnl.toFixed(2)}%` : '--'}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      <CheckCircle size={14} className="text-teal opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                      <CheckCircle size={14} className="text-teal opacity-60 inline" />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-faint">
-              <Zap size={32} className="mb-md opacity-20" />
-              <p className="font-mono text-xs tracking-widest">AWAITING_FIRST_EXECUTION_SEQUENCE</p>
+            <div className="flex flex-col items-center justify-center py-16 text-faint">
+              <Zap size={32} className="mb-3 opacity-30 text-teal" />
+              <p className="font-mono text-xs tracking-wider">AWAITING_FIRST_TRADE_SIGNAL</p>
+              <p className="font-mono text-[10px] text-faint mt-1">Keine abgeschlossenen Trades in der aktuellen Session</p>
             </div>
           )}
         </div>
       </section>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(125,211,192,0.2); }
-      `}} />
     </div>
   );
 };

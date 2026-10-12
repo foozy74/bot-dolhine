@@ -101,3 +101,34 @@ async def initialize_settings(
     """Initialize database with default settings (run once on startup)"""
     await service.initialize_defaults()
     return {"message": "Settings initialized successfully"}
+
+class TestNotificationRequest(BaseModel):
+    bot_token: Optional[str] = None
+    chat_id: Optional[str] = None
+
+@router.post("/notifications/test")
+async def test_telegram_notification(
+    req: TestNotificationRequest = TestNotificationRequest(),
+    service: SettingsService = Depends(get_settings_service)
+):
+    """Test Telegram connection and return diagnostics"""
+    from services.notification_service import NotificationService
+    
+    token = req.bot_token
+    chat_id = req.chat_id
+
+    # If not provided, fetch from database
+    if not token:
+        setting = await service.get_setting("telegram_bot_token", include_secrets=True)
+        if setting and setting.get("value") and setting["value"] != "••••••••":
+            token = setting["value"]
+
+    if not chat_id:
+        setting = await service.get_setting("telegram_chat_id", include_secrets=True)
+        if setting and setting.get("value"):
+            chat_id = setting["value"]
+
+    notifier = NotificationService()
+    result = await notifier.test_notification(token=token, chat_id=chat_id)
+    return result
+

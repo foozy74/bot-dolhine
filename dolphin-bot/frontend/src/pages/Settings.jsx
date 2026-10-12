@@ -14,7 +14,8 @@ import {
   Loader2,
   ChevronRight,
   Shield,
-  Cpu
+  Send,
+  HelpCircle
 } from 'lucide-react';
 
 const categoryIcons = {
@@ -67,8 +68,14 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
 
   if (config.type === 'bool') {
     return (
-      <div className="flex items-center justify-between p-md rounded-xl bg-white/5 border border-white/5">
-        <div className="flex items-center gap-sm">
+      <div 
+        className="flex items-center justify-between p-3 rounded-xl"
+        style={{
+          backgroundColor: 'var(--surface-muted)',
+          border: '1px solid var(--glass-border)',
+        }}
+      >
+        <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] text-dim uppercase">
             {value ? 'STATE_ACTIVE' : 'STATE_DISABLED'}
           </span>
@@ -80,29 +87,29 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
           <input
             type="checkbox"
             className="sr-only peer"
-            checked={value}
+            checked={Boolean(value)}
             onChange={(e) => handleChange(e.target.checked)}
           />
-          <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
+          <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
         </label>
       </div>
     );
   }
 
   return (
-    <div className="relative flex flex-col gap-xs">
-      <div className="flex items-center gap-sm">
+    <div className="relative flex flex-col gap-1">
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <input
             type={config.is_secret && !showSecret ? 'password' : config.type === 'int' || config.type === 'float' ? 'number' : 'text'}
-            value={localValue}
+            value={localValue !== undefined ? localValue : ''}
             onChange={(e) => handleChange(e.target.value)}
-            className={`glass-input font-mono text-sm ${validationError ? 'border-red-400' : ''}`}
+            className={`glass-input font-mono ${validationError ? 'border-red-400' : ''}`}
             style={{ 
               borderColor: validationError ? '#ef4444' : undefined,
               paddingRight: config.is_secret ? '45px' : '16px'
             }}
-            placeholder={config.description}
+            placeholder={config.description || ''}
             step={config.type === 'float' ? '0.01' : config.type === 'int' ? '1' : undefined}
             min={config.min}
             max={config.max}
@@ -110,7 +117,7 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
           {config.is_secret && (
             <button
               onClick={() => setShowSecret(!showSecret)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-main transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-white transition-colors"
               type="button"
             >
               {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -126,12 +133,12 @@ const SettingInput = ({ settingKey, config, value, onChange, onSave, saveStatus 
         )}
       </div>
       {validationError && (
-        <p className="text-red-400 font-mono text-[9px] uppercase tracking-wider px-sm">
+        <p className="text-red-400 font-mono text-[9px] uppercase tracking-wider px-1">
           {validationError}
         </p>
       )}
       {(config.min !== undefined || config.max !== undefined) && config.type !== 'bool' && (
-        <p className="text-faint font-mono text-[9px] uppercase tracking-wider px-sm">
+        <p className="text-faint font-mono text-[9px] uppercase tracking-wider px-1">
           VALID_RANGE: [{config.min !== undefined ? config.min : '-INF'}, {config.max !== undefined ? config.max : 'INF'}]
         </p>
       )}
@@ -153,6 +160,10 @@ const Settings = () => {
   const [activeCategory, setActiveCategory] = useState('trading');
   const [pendingChanges, setPendingChanges] = useState({});
   const [saveMessage, setSaveMessage] = useState(null);
+  
+  // Telegram Test State
+  const [isTestingTelegram, setIsTestingTelegram] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   const handleSettingChange = (key, value) => {
     setPendingChanges((prev) => ({ ...prev, [key]: value }));
@@ -167,7 +178,32 @@ const Settings = () => {
         return newChanges;
       });
     } catch (err) {
-      // Error is handled by the hook
+      // Error handled by hook
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    setIsTestingTelegram(true);
+    setTestResult(null);
+    try {
+      const response = await fetch('/api/settings/notifications/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bot_token: pendingChanges['telegram_bot_token'] || undefined,
+          chat_id: pendingChanges['telegram_chat_id'] || undefined,
+        })
+      });
+      const data = await response.json();
+      setTestResult(data);
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        message: 'Verbindungsfehler zur API',
+        details: err.message
+      });
+    } finally {
+      setIsTestingTelegram(false);
     }
   };
 
@@ -176,7 +212,7 @@ const Settings = () => {
   if (loading && Object.keys(settings).length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 size={48} className="animate-spin text-teal opacity-20 mb-md" />
+        <Loader2 size={40} className="animate-spin text-teal opacity-30 mb-3" />
         <p className="font-mono text-xs tracking-widest text-faint">FETCHING_CONFIGURATION...</p>
       </div>
     );
@@ -184,9 +220,9 @@ const Settings = () => {
 
   if (error) {
     return (
-      <div className="terminal-box text-center py-20" data-title="SYSTEM_ERROR">
-        <AlertCircle size={48} className="text-red-400 mx-auto mb-md" />
-        <h2 className="text-xl font-bold mb-xs">INITIALIZATION_FAILURE</h2>
+      <div className="terminal-box text-center py-16" data-title="SYSTEM_ERROR">
+        <AlertCircle size={40} className="text-red-400 mx-auto mb-3" />
+        <h2 className="text-lg font-bold mb-1">INITIALIZATION_FAILURE</h2>
         <p className="text-faint font-mono text-xs uppercase">{error}</p>
       </div>
     );
@@ -196,21 +232,23 @@ const Settings = () => {
   const currentCategorySchema = schema[activeCategory] || {};
 
   return (
-    <div className="flex flex-col gap-xl">
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
+    <div className="flex flex-col gap-6 animate-fade-in">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-xs">CORE_CONFIG_MANIFEST</h2>
-          <div className="flex items-center gap-md font-mono text-[11px] text-faint uppercase">
-            <span className="flex items-center gap-xs">
+          <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-white mb-1">
+            CORE_CONFIG <span className="gradient-text">MANIFEST</span>
+          </h2>
+          <div className="flex items-center gap-3 font-mono text-[11px] text-faint uppercase">
+            <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue" />
               ENV_PRODUCTION
             </span>
             <span>•</span>
-            <span className="text-teal">LOCAL_STORAGE_SYNCED</span>
+            <span className="text-teal">SQLITE_ENCRYPTED_STORE</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-sm">
+        <div className="flex items-center gap-3">
           {hasPendingChanges && (
             <button
               onClick={async () => {
@@ -220,45 +258,50 @@ const Settings = () => {
                     handleSaveSetting(key, value)
                   );
                   await Promise.all(savePromises);
-                  setSaveMessage({ type: 'success', text: 'MANIFEST_UPDATED_SUCCESSFULLY' });
+                  setSaveMessage({ type: 'success', text: 'KONFIGURATION ERFOLGREICH GESPEICHERT' });
                   setTimeout(() => setSaveMessage(null), 5000);
                 } catch (error) {
-                  setSaveMessage({ type: 'error', text: 'SAVE_SEQUENCE_ABORTED' });
+                  setSaveMessage({ type: 'error', text: 'FEHLER BEIM SPEICHERN DER PARAMETER' });
                   setTimeout(() => setSaveMessage(null), 5000);
                 }
               }}
               className="btn btn-primary"
               disabled={saveStatus?.status === 'saving'}
             >
-              <Save size={16} />
+              <Save size={15} />
               {saveStatus?.status === 'saving' ? 'WRITING...' : `COMMIT_${Object.keys(pendingChanges).length}_CHANGES`}
             </button>
           )}
           <button
             onClick={resetToDefaults}
             className="btn btn-outline"
-            style={{ borderColor: '#ef4444', color: '#ef4444' }}
+            style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#ef4444' }}
             disabled={saveStatus?.status === 'resetting'}
           >
-            <RefreshCw size={16} className={saveStatus?.status === 'resetting' ? 'animate-spin' : ''} />
+            <RefreshCw size={15} className={saveStatus?.status === 'resetting' ? 'animate-spin' : ''} />
             RESET_DEFAULTS
           </button>
         </div>
       </section>
 
       {saveMessage && (
-        <div className={`terminal-box animate-fade-in ${saveMessage.type === 'success' ? 'border-teal/30' : 'border-red-400/30'}`} data-title="NOTIFICATION" style={{ padding: '16px' }}>
-          <div className={`flex items-center gap-md font-mono text-xs ${saveMessage.type === 'success' ? 'text-teal' : 'text-red-400'}`}>
-            {saveMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-            {saveMessage.text}
-          </div>
+        <div 
+          className="p-3 rounded-xl font-mono text-xs flex items-center gap-2 animate-fade-in"
+          style={{
+            backgroundColor: saveMessage.type === 'success' ? 'rgba(125, 211, 192, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            border: `1px solid ${saveMessage.type === 'success' ? 'rgba(125, 211, 192, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            color: saveMessage.type === 'success' ? 'var(--teal)' : '#ef4444',
+          }}
+        >
+          {saveMessage.type === 'success' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+          {saveMessage.text}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '32px' }} className="flex-col lg:grid">
-        {/* Category Navigation */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+        {/* Category Navigation Panel */}
         <div className="terminal-box h-fit" data-title="SYSTEM_MODULES" style={{ padding: '12px' }}>
-          <div className="flex flex-col gap-xs">
+          <div className="flex flex-col gap-1.5">
             {Object.keys(categoryLabels).map((category) => {
               const Icon = categoryIcons[category];
               const isActive = activeCategory === category;
@@ -266,48 +309,117 @@ const Settings = () => {
                 <button
                   key={category}
                   onClick={() => setActiveCategory(category)}
-                  className={`
-                    flex items-center justify-between px-md py-sm rounded-xl transition-all duration-200 group
-                    ${isActive 
-                      ? 'bg-teal/10 text-teal border border-teal/20' 
-                      : 'text-dim hover:text-main hover:bg-white/5 border border-transparent'}
-                  `}
+                  className="flex items-center justify-between p-3 rounded-xl transition-all duration-200"
                   style={{
-                    background: isActive ? 'rgba(125, 211, 192, 0.08)' : 'transparent',
-                    borderColor: isActive ? 'rgba(125, 211, 192, 0.2)' : 'transparent',
-                    color: isActive ? 'var(--teal)' : 'var(--text-dim)',
+                    backgroundColor: isActive ? 'rgba(125, 211, 192, 0.12)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: isActive ? 'rgba(125, 211, 192, 0.3)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-dim)',
                     textAlign: 'left',
                     width: '100%',
                     cursor: 'pointer'
                   }}
                 >
-                  <div className="flex items-center gap-md">
-                    <Icon size={18} />
-                    <span className="font-mono text-[11px] font-bold tracking-wider">{categoryLabels[category]}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} className={isActive ? 'text-teal' : ''} />
+                    <span className="font-mono text-xs font-bold tracking-wider">{categoryLabels[category]}</span>
                   </div>
-                  <ChevronRight size={14} className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
+                  <ChevronRight size={14} style={{ opacity: isActive ? 1 : 0.3 }} />
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Settings Form */}
+        {/* Settings Form Panel */}
         <div className="terminal-box" data-title={categoryLabels[activeCategory]}>
-          <div className="flex flex-col gap-lg py-md">
+          <div className="flex flex-col gap-5 pt-3">
+            {/* Telegram Notification Guidance & Test Section */}
+            {activeCategory === 'notifications' && (
+              <div 
+                className="p-4 rounded-xl mb-2"
+                style={{
+                  backgroundColor: 'rgba(91, 155, 213, 0.08)',
+                  border: '1px solid rgba(91, 155, 213, 0.25)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-blue font-bold font-display text-sm">
+                    <Send size={16} />
+                    <span>TELEGRAM ALERT GATEWAY</span>
+                  </div>
+                  <button
+                    onClick={handleTestTelegram}
+                    disabled={isTestingTelegram}
+                    className="btn btn-outline"
+                    style={{ height: '32px', padding: '0 12px', fontSize: '11px' }}
+                  >
+                    {isTestingTelegram ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        TESTE VERBINDUNG...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        TEST-NACHRICHT SENDEN
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-dim text-xs font-mono leading-relaxed mb-2">
+                  Ermöglicht automatische Benachrichtigungen bei Buy/Sell Orders und PnL-Abschlüssen direkt auf dein Smartphone.
+                </p>
+
+                <div 
+                  className="p-2.5 rounded-lg font-mono text-[11px] leading-relaxed"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)' }}
+                >
+                  <span className="text-teal font-bold block mb-1">💡 AutoFund Setup-Hinweis:</span>
+                  <span className="text-faint">
+                    1. Erstelle einen Bot bei <b>@BotFather</b> und kopiere das Token.<br />
+                    2. Finde deine Chat-ID über <b>@userinfobot</b>.<br />
+                    3. <b>Wichtig:</b> Öffne deinen Bot in Telegram und klicke auf <b>Start</b> (bzw. sende <code>/start</code>), sonst kann Telegram keine Nachrichten zustellen (Fehler: <i>chat not found</i>).
+                  </span>
+                </div>
+
+                {testResult && (
+                  <div 
+                    className="mt-3 p-3 rounded-lg font-mono text-xs flex flex-col gap-1"
+                    style={{
+                      backgroundColor: testResult.ok ? 'rgba(125, 211, 192, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      border: `1px solid ${testResult.ok ? 'rgba(125, 211, 192, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                      color: testResult.ok ? 'var(--teal)' : '#ef4444',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 font-bold">
+                      {testResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                      {testResult.message}
+                    </div>
+                    {testResult.details && (
+                      <div className="text-[10px] text-faint mt-1 pl-5">
+                        {testResult.details}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {Object.entries(currentCategorySettings).map(([key, setting]) => {
               const schemaConfig = currentCategorySchema[key] || {};
               const label = key.replace(/_/g, ' ').toUpperCase();
               return (
                 <div 
                   key={key} 
-                  className="flex flex-col gap-md pb-lg border-b border-white/5 last:border-0 last:pb-0"
+                  className="flex flex-col gap-2 pb-4 border-b border-white/5 last:border-0 last:pb-0"
                 >
-                  <div className="flex flex-col gap-xs">
-                    <div className="flex items-center gap-sm">
-                      <span className="font-mono text-xs font-bold text-main tracking-wide">{label}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-white tracking-wide">{label}</span>
                       {schemaConfig.is_secret && (
-                        <div className="badge badge-purple flex items-center gap-xs" style={{ fontSize: '8px' }}>
+                        <div className="badge badge-purple" style={{ fontSize: '8px', padding: '2px 6px' }}>
                           <Shield size={10} /> ENCRYPTED_STORAGE
                         </div>
                       )}
@@ -327,7 +439,6 @@ const Settings = () => {
                       onSave={handleSaveSetting}
                       config={schemaConfig}
                       saveStatus={saveStatus}
-                      hasChanges={pendingChanges[key] !== undefined}
                     />
                   </div>
                 </div>
