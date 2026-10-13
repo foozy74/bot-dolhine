@@ -9,14 +9,26 @@ export const useSettings = () => {
 
   // Fetch all settings
   const fetchSettings = useCallback(async (includeSecrets = false) => {
+    setLoading(true);
     try {
       const url = includeSecrets ? '/api/settings/?include_secrets=true' : '/api/settings/';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch settings');
+      let response = await fetch(url);
+      
+      // Fallback without trailing slash if needed
+      if (!response.ok) {
+        const fallbackUrl = includeSecrets ? '/api/settings?include_secrets=true' : '/api/settings';
+        response = await fetch(fallbackUrl);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP_${response.status}: Failed to fetch configuration`);
+      }
       const data = await response.json();
       setSettings(data);
+      setError(null);
     } catch (err) {
-      setError(err.message);
+      console.error('Settings fetch error:', err);
+      setError(err.message || 'Failed to fetch settings');
     } finally {
       setLoading(false);
     }
@@ -25,12 +37,16 @@ export const useSettings = () => {
   // Fetch settings schema
   const fetchSchema = useCallback(async () => {
     try {
-      const response = await fetch('/api/settings/schema/form');
-      if (!response.ok) throw new Error('Failed to fetch schema');
-      const data = await response.json();
-      setSchema(data);
+      let response = await fetch('/api/settings/schema/form');
+      if (!response.ok) {
+        response = await fetch('/api/settings/schema/form/');
+      }
+      if (response.ok) {
+        const data = await response.json();
+        setSchema(data);
+      }
     } catch (err) {
-      console.error('Failed to fetch schema:', err);
+      console.warn('Failed to fetch schema (non-critical):', err);
     }
   }, []);
 

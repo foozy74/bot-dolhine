@@ -223,7 +223,16 @@ const Settings = () => {
       <div className="terminal-box text-center py-16" data-title="SYSTEM_ERROR">
         <AlertCircle size={40} className="text-red-400 mx-auto mb-3" />
         <h2 className="text-lg font-bold mb-1">INITIALIZATION_FAILURE</h2>
-        <p className="text-faint font-mono text-xs uppercase">{error}</p>
+        <p className="text-faint font-mono text-xs uppercase mb-5">{error}</p>
+        <button
+          onClick={() => {
+            fetchSettings();
+            fetchSchema();
+          }}
+          className="px-4 py-2 rounded-lg bg-teal/20 hover:bg-teal/30 text-teal text-xs font-mono font-semibold border border-teal/40 transition-colors"
+        >
+          RETRY_CONNECTION
+        </button>
       </div>
     );
   }

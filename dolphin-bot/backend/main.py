@@ -14,14 +14,18 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await init_db()
-    
-    # Initialize default settings
-    from core.database import async_session_maker
-    from services.settings_service import SettingsService
-    async with async_session_maker() as session:
-        service = SettingsService(session)
-        await service.initialize_defaults()
+    try:
+        await init_db()
+        from core.database import async_session_maker
+        from services.settings_service import SettingsService
+        async with async_session_maker() as session:
+            service = SettingsService(session)
+            await service.initialize_defaults()
+        print("✅ Database & Settings successfully initialized", flush=True)
+    except Exception as e:
+        print(f"❌ Startup Error: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         
     yield
     # Shutdown

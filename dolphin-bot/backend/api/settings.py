@@ -26,6 +26,7 @@ class SettingResponse(BaseModel):
 async def get_settings_service(session: AsyncSession = Depends(get_session)) -> SettingsService:
     return SettingsService(session)
 
+@router.get("", response_model=Dict[str, Dict[str, Any]])
 @router.get("/", response_model=Dict[str, Dict[str, Any]])
 async def get_all_settings(
     include_secrets: bool = Query(False, description="Include secret values"),
