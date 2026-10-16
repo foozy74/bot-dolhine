@@ -308,7 +308,7 @@ const Dashboard = () => {
           data-title="REALTIME_MARKET_STREAM" 
           style={{ minHeight: '440px', display: 'flex', flexDirection: 'column' }}
         >
-          <div className="flex items-center justify-between mt-3 mb-2 px-1">
+          <div className="flex items-center justify-between px-1" style={{ marginTop: '16px', marginBottom: '14px' }}>
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-white font-bold">{config.symbol}</span>
               <span className="badge badge-teal" style={{ fontSize: '9px' }}>{config.timeframe}</span>
@@ -394,9 +394,9 @@ const Dashboard = () => {
         {/* Engine Parameters & System Health */}
         <div className="flex flex-col gap-4">
           <div className="terminal-box" data-title="ENGINE_PARAMETERS">
-            <div className="flex flex-col gap-4 pt-3">
+            <div className="flex flex-col gap-4" style={{ paddingTop: '16px' }}>
               <div>
-                <label className="font-mono text-[10px] text-faint uppercase block mb-1.5">
+                <label className="font-mono text-[11px] text-faint uppercase block" style={{ letterSpacing: '0.08em', marginBottom: '6px' }}>
                   HANDELSPAAR (SYMBOL)
                 </label>
                 <input
@@ -410,7 +410,7 @@ const Dashboard = () => {
               </div>
 
               <div>
-                <label className="font-mono text-[10px] text-faint uppercase block mb-1.5">
+                <label className="font-mono text-[11px] text-faint uppercase block" style={{ letterSpacing: '0.08em', marginBottom: '6px' }}>
                   ZEITFENSTER (TIMEFRAME)
                 </label>
                 <select
@@ -428,8 +428,8 @@ const Dashboard = () => {
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="font-mono text-[10px] text-faint uppercase">
+                <div className="flex justify-between items-center" style={{ marginBottom: '8px' }}>
+                  <label className="font-mono text-[11px] text-faint uppercase" style={{ letterSpacing: '0.08em' }}>
                     RISIKO-ALLOKATION PRO TRADE
                   </label>
                   <span className="font-mono text-xs text-teal font-bold">
@@ -444,60 +444,61 @@ const Dashboard = () => {
                   value={config.risk_pct}
                   onChange={(e) => setConfig({ ...config, risk_pct: parseFloat(e.target.value) })}
                   disabled={status?.running}
-                  className="w-full accent-teal cursor-pointer"
+                  className="w-full cursor-pointer"
                 />
               </div>
 
               {/* Simulation Mode Switch */}
               <div 
-                className="flex items-center justify-between p-3 rounded-xl mt-1"
+                className="flex items-center justify-between rounded-xl"
                 style={{
                   backgroundColor: 'var(--surface-muted)',
                   border: '1px solid var(--glass-border)',
+                  padding: '12px 14px',
+                  marginTop: '4px',
                 }}
               >
                 <div>
-                  <div className="font-mono text-[11px] text-white font-bold uppercase">
+                  <div className="font-mono text-xs text-white font-bold uppercase" style={{ letterSpacing: '0.04em' }}>
                     SIMULATION / DRY RUN
                   </div>
-                  <div className="font-mono text-[9px] text-faint">
+                  <div className="font-mono text-[10px] text-faint" style={{ marginTop: '2px' }}>
                     Trades ohne echtes Kapital ausführen
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="toggle-switch">
                   <input
                     type="checkbox"
-                    className="sr-only peer"
                     checked={config.dry_run}
                     onChange={(e) => setConfig({ ...config, dry_run: e.target.checked })}
                     disabled={status?.running}
                   />
-                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
+                  <span className="toggle-slider"></span>
                 </label>
               </div>
             </div>
           </div>
 
           <div className="terminal-box" data-title="SYSTEM_DIAGNOSTICS">
-            <div className="flex flex-col gap-3 pt-2">
+            <div className="flex flex-col gap-3" style={{ paddingTop: '16px' }}>
               <div className="flex justify-between items-center">
-                <span className="font-mono text-[10px] text-faint">WEBSOCKET_STREAM</span>
-                <span className={`font-mono text-[10px] font-bold ${isConnected ? 'text-teal' : 'text-red-400'}`}>
+                <span className="font-mono text-[11px] text-faint uppercase" style={{ letterSpacing: '0.08em' }}>WEBSOCKET_STREAM</span>
+                <span className={`font-mono text-[11px] font-bold ${isConnected ? 'text-teal' : 'text-red-400'}`}>
                   {isConnected ? '100% OPERATIONAL' : 'DISCONNECTED'}
                 </span>
               </div>
-              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                <div className={`h-full ${isConnected ? 'bg-teal' : 'bg-red-400'}`} style={{ width: isConnected ? '100%' : '0%' }} />
+              <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ width: isConnected ? '100%' : '0%', height: '100%', backgroundColor: isConnected ? 'var(--teal)' : '#ef4444', borderRadius: '999px', transition: 'width 0.3s ease' }} />
               </div>
 
-              <div className="flex justify-between items-center mt-1">
-                <span className="font-mono text-[10px] text-faint">ENGINE_STATUS</span>
-                <span className="font-mono text-[10px] text-blue font-bold">
+              <div className="flex justify-between items-center" style={{ marginTop: '6px' }}>
+                <span className="font-mono text-[11px] text-faint uppercase" style={{ letterSpacing: '0.08em' }}>ENGINE_STATUS</span>
+                <span className="font-mono text-[11px] text-blue font-bold">
                   {status?.running ? 'ACTIVE_LOOP' : 'IDLE'}
                 </span>
               </div>
-              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-blue h-full" style={{ width: status?.running ? '100%' : '20%' }} />
+              <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ width: status?.running ? '100%' : '20%', height: '100%', backgroundColor: 'var(--blue)', borderRadius: '999px', transition: 'width 0.3s ease' }} />
               </div>
             </div>
           </div>

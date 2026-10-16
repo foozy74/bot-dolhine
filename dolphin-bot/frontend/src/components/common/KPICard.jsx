@@ -18,70 +18,83 @@ export default function KPICard({
 }) {
   return (
     <div 
-      className="relative p-4 transition-all duration-200"
+      className="relative transition-all duration-200"
       style={{
         backgroundColor: 'var(--bg-card)',
         border: '1px solid var(--glass-border)',
         borderRadius: '16px',
         backdropFilter: 'var(--blur)',
+        padding: '20px 22px',
+        minHeight: '124px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* AutoFund Corporate Corner Tech Accents */}
+      {/* AutoFund Corporate Corner Tech Accents - Aligned to border radius */}
       <span 
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '8px',
-          height: '8px',
-          borderLeft: '2px solid var(--teal)',
-          borderTop: '2px solid var(--teal)',
+          top: '-1px',
+          left: '-1px',
+          width: '12px',
+          height: '12px',
+          borderLeft: '2px solid rgba(125, 211, 192, 0.4)',
+          borderTop: '2px solid rgba(125, 211, 192, 0.4)',
           borderTopLeftRadius: '16px',
+          pointerEvents: 'none',
         }} 
       />
       <span 
         style={{
           position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '8px',
-          height: '8px',
-          borderRight: '2px solid var(--teal)',
-          borderTop: '2px solid var(--teal)',
+          top: '-1px',
+          right: '-1px',
+          width: '12px',
+          height: '12px',
+          borderRight: '2px solid rgba(125, 211, 192, 0.4)',
+          borderTop: '2px solid rgba(125, 211, 192, 0.4)',
           borderTopRightRadius: '16px',
+          pointerEvents: 'none',
         }} 
       />
       <span 
         style={{
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: '8px',
-          height: '8px',
-          borderLeft: '2px solid var(--teal)',
-          borderBottom: '2px solid var(--teal)',
+          bottom: '-1px',
+          left: '-1px',
+          width: '12px',
+          height: '12px',
+          borderLeft: '2px solid rgba(125, 211, 192, 0.4)',
+          borderBottom: '2px solid rgba(125, 211, 192, 0.4)',
           borderBottomLeftRadius: '16px',
+          pointerEvents: 'none',
         }} 
       />
       <span 
         style={{
           position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: '8px',
-          height: '8px',
-          borderRight: '2px solid var(--teal)',
-          borderBottom: '2px solid var(--teal)',
+          bottom: '-1px',
+          right: '-1px',
+          width: '12px',
+          height: '12px',
+          borderRight: '2px solid rgba(125, 211, 192, 0.4)',
+          borderBottom: '2px solid rgba(125, 211, 192, 0.4)',
           borderBottomRightRadius: '16px',
+          pointerEvents: 'none',
         }} 
       />
 
+      {/* Top Header: Label & Badges/Icon */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span 
           style={{ 
             fontFamily: 'JetBrains Mono', 
-            fontSize: '10px', 
-            letterSpacing: '0.15em', 
+            fontSize: '11px', 
+            fontWeight: 700,
+            letterSpacing: '0.14em', 
             textTransform: 'uppercase', 
             color: 'var(--text-faint)' 
           }}
@@ -94,21 +107,24 @@ export default function KPICard({
         </div>
       </div>
 
+      {/* Main Metric Value */}
       <div 
         style={{ 
           fontFamily: 'Outfit, sans-serif', 
-          fontSize: '24px', 
+          fontSize: '26px', 
           fontWeight: 800, 
           letterSpacing: '-0.02em',
-          color: tone === 'positive' ? 'var(--teal)' : tone === 'negative' ? '#ef4444' : '#fff',
-          lineHeight: 1.2
+          color: tone === 'positive' ? 'var(--teal)' : tone === 'negative' ? '#ef4444' : '#f8fafc',
+          lineHeight: 1.2,
+          margin: '4px 0 8px 0',
         }}
       >
         {value}
       </div>
 
+      {/* Bottom Subtext / Delta & Hint */}
       {(delta || hint) && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '2px' }}>
           {delta && (
             <span 
               style={{ 
@@ -122,7 +138,7 @@ export default function KPICard({
             </span>
           )}
           {hint && (
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: 'var(--text-faint)', marginLeft: 'auto' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: 'var(--text-faint)', marginLeft: 'auto' }}>
               {hint}
             </span>
           )}

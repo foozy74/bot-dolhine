@@ -39,7 +39,7 @@ services:
       - dolphin-bot
       - frontend
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3

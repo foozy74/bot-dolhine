@@ -36,6 +36,9 @@ services:
     depends_on:
       - dolphin-bot
       - dolphin-frontend
+    environment:
+      - BASIC_AUTH_USER=${BASIC_AUTH_USER:-admin}
+      - BASIC_AUTH_PASS=${BASIC_AUTH_PASS:-admin}
     networks:
       - tradehub-network
     labels:
@@ -44,7 +47,7 @@ services:
       - "traefik.http.routers.dolphin-router.tls=true"
       - "traefik.http.services.dolphin-router.loadbalancer.server.port=80"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
